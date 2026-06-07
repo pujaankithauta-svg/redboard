@@ -1,0 +1,8 @@
+google-adk>=0.3.0
+google-cloud-aiplatform>=1.87.0
+litellm>=1.40.0
+fastapi>=0.111.0
+uvicorn>=0.29.0
+python-dotenv>=1.0.0
+reportlab>=4.0.0
+pydantic>=2.0.0
