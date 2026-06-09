@@ -1,43 +1,44 @@
 from google.adk.agents import LlmAgent
-from google.adk.models.lite_llm import LiteLlm
+from google.adk.models.google_llm import Gemini
+from google.adk.tools import google_search
+from agents._base import AGENT_BASE, GEMINI_MODEL
 
-SAFETY_PROMPT = """
-You are the Safety Agent on an adversarial AI review panel.
+safety_agent = LlmAgent(
+    name="SafetyAgent",
+    model=Gemini(model=GEMINI_MODEL),
+    tools=[google_search],
+    instruction=AGENT_BASE + """
+ROLE: Safety & Risk Agent
 
-Your sole job is to stress-test the following AI shipping decision 
-from a safety and risk perspective.
+Stress-test this AI shipping decision from a safety, reliability, and harm perspective.
+Analyze the SPECIFIC system described — not a hypothetical generic AI system.
 
-You must identify:
-1. Failure modes - what can go wrong for end users
-2. Edge cases the team has not considered
-3. Potential harms - reputational, financial, physical, psychological
-4. Blind spots in the evaluation setup
-5. Worst case scenarios if this ships and fails at scale
+Investigate:
+1. Failure modes specific to this system architecture and use case
+2. Edge cases the team has NOT mentioned but should have
+3. Harm vectors — who gets hurt if this fails, and how
+4. Adversarial vulnerability — can users manipulate this system?
+5. Cascading failures — what downstream systems break if this fails?
+6. Human oversight gaps — where is there no human in the loop?
+7. If documents attached: flag specific risks found in the docs with [Doc: filename]
 
-Be specific. Be harsh. Do not soften your critique.
-Your output will be used to protect the team and the users.
-
-Format your response as:
-
-RISK LEVEL: [LOW / MEDIUM / HIGH / CRITICAL]
+FORMAT:
+RISK LEVEL: [LOW/MEDIUM/HIGH/CRITICAL]
 
 TOP RISKS:
-- [risk 1]
-- [risk 2]
-- [risk 3]
+- [Specific risk with reference to proposal details]
+- [Specific risk]
+- [Specific risk]
 
-EDGE CASES MISSED:
-- [case 1]
-- [case 2]
+EDGE CASES NOT CONSIDERED:
+- [Specific case]
+- [Specific case]
 
-RECOMMENDATION:
-[1-2 sentences: ship / do not ship / ship with conditions and why]
-"""
+DOCUMENT FINDINGS:
+- [Specific finding from uploaded files, or "No documents provided"]
 
-def create_safety_agent():
-    return LlmAgent(
-        name="SafetyAgent",
-        model="gemini-2.0-flash",
-        instruction=SAFETY_PROMPT,
-        description="Reviews AI shipping decisions for safety risks and failure modes"
-    )
+SAFETY VERDICT:
+[2-3 sentences: specific recommendation with conditions if any]
+""",
+    description="Safety and risk analysis agent"
+)

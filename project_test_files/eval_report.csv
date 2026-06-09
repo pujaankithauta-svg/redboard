@@ -1,0 +1,13 @@
+claim_type,test_set_size,accuracy,precision_approve,recall_approve,precision_reject,recall_reject,fraud_recall,false_positive_reject,notes
+Auto - Standard,2800,93.4%,95.2%,91.1%,90.1%,94.3%,89.0%,4.8%,Best performing segment. Well represented in training data.
+Auto - Total Loss,420,89.1%,91.0%,87.3%,85.2%,90.8%,86.0%,8.7%,Total loss edge cases causing issues with salvage value calculation.
+Homeowner - Standard,1250,90.8%,93.8%,88.9%,87.3%,92.0%,87.5%,5.9%,Roof claims overrepresented in training vs test set.
+Homeowner - Water Damage,380,86.2%,88.0%,83.1%,82.0%,88.5%,81.0%,11.2%,High false positive on mold-related claims. Training data predates new building codes.
+Homeowner - Fire,150,88.9%,91.0%,86.2%,84.0%,91.3%,90.0%,9.0%,Fire claims with multiple damaged items show accuracy drop below 85%.
+ALL SEGMENTS COMBINED,5000,91.2%,94.1%,89.3%,88.7%,92.1%,88.0%,6.0%,Primary headline metric
+
+NOTE: Test set drawn from same 2019-2024 pool as training data. No temporal holdout validation performed.
+NOTE: COVID anomaly period (March 2020 - June 2021) included in test set without flagging.
+NOTE: Zero test samples from: health insurance, life insurance, commercial property over 500K, non-English documents, CAT events.
+NOTE: Adjuster inconsistency rate of ~12% means ground truth labels have inherent noise of similar magnitude.
+NOTE: Fraud detection tested on 200 known fraud cases only — sample may not represent emerging fraud patterns.

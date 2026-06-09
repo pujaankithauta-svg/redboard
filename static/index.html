@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redboard — Adversarial AI Review Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,900;1,300;1,600&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #C0392B; --red-d: #96281B; --red-g: rgba(192,57,43,0.12);
+  --ink: #0C0C0C; --ink2: #141414; --ink3: #1C1C1C; --ink4: #242424;
+  --mist: #F8F6F1; --fog: #EEEBE3; --ash: #888078; --slate: #C4BFB5;
+  --go: #1A7A45; --go-g: rgba(26,122,69,0.12);
+  --warn: #B85C00; --warn-g: rgba(184,92,0,0.12);
+  --stop: #9B1C1C; --stop-g: rgba(155,28,28,0.12);
+  --line: rgba(255,255,255,0.07); --line2: rgba(255,255,255,0.04);
+  --r: 2px;
+  font-size: 15px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--ink); color: var(--mist); font-family: 'Outfit', sans-serif; font-weight: 400; line-height: 1.65; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+h1,h2,h3,h4 { font-family: 'Fraunces', serif; font-weight: 600; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: 'Outfit', sans-serif; }
+input, textarea, select { font-family: 'Outfit', sans-serif; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--ink4); border-radius: 3px; }
+
+/* ── Utility ── */
+.hidden { display: none !important; }
+.fade-in { animation: fadeUp .35s ease both; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+/* ── Noise grain overlay ── */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Landing ── */
+#landing { display:flex; flex-direction:column; min-height:100vh; }
+.land-nav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 60px; border-bottom:1px solid var(--line);
+  position:sticky; top:0; background:rgba(12,12,12,.92); backdrop-filter:blur(12px); z-index:100;
+}
+.logo { font-family:'Fraunces',serif; font-size:22px; font-weight:900; letter-spacing:-1px; }
+.logo em { color:var(--red); font-style:normal; }
+.land-nav-links { display:flex; gap:32px; font-size:13px; color:var(--ash); }
+.land-nav-links a:hover { color:var(--mist); }
+.land-nav-cta { display:flex; gap:10px; }
+
+.hero {
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:100px 40px 60px; position:relative; overflow:hidden;
+}
+.hero::before {
+  content:''; position:absolute; top:-200px; left:50%; transform:translateX(-50%);
+  width:800px; height:800px; border-radius:50%;
+  background:radial-gradient(circle, rgba(192,57,43,.18) 0%, transparent 65%);
+  pointer-events:none;
+}
+.hero-eyebrow {
+  display:inline-flex; align-items:center; gap:8px; background:var(--red-g);
+  border:1px solid rgba(192,57,43,.3); padding:6px 14px; border-radius:20px;
+  font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--red);
+  margin-bottom:28px; font-weight:600;
+}
+.hero h1 { font-size:clamp(40px,6vw,80px); font-weight:900; line-height:1.05; letter-spacing:-2px; max-width:900px; margin-bottom:24px; }
+.hero h1 em { color:var(--red); font-style:normal; }
+.hero-sub { font-size:18px; color:var(--ash); max-width:580px; line-height:1.6; margin-bottom:44px; }
+.hero-cta { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+
+.agents-row {
+  display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  padding:0 40px 80px;
+}
+.agent-pill {
+  display:flex; align-items:center; gap:8px;
+  background:var(--ink2); border:1px solid var(--line);
+  padding:10px 18px; font-size:12px; color:var(--ash);
+  letter-spacing:.5px; font-weight:500;
+}
+.agent-pill span { font-size:18px; }
+
+.features-section { padding:80px 60px; }
+.section-label { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--red); font-weight:600; margin-bottom:12px; }
+.section-title { font-family:'Fraunces',serif; font-size:clamp(28px,4vw,48px); font-weight:600; margin-bottom:16px; letter-spacing:-1px; }
+.section-sub { color:var(--ash); font-size:16px; max-width:500px; margin-bottom:56px; }
+
+.features-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:1px; background:var(--line); }
+.feat-card {
+  background:var(--ink); padding:32px;
+  transition:background .2s;
+}
+.feat-card:hover { background:var(--ink2); }
+.feat-icon {
+  width:44px; height:44px; background:var(--red-g); border:1px solid rgba(192,57,43,.25);
+  display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:16px;
+}
+.feat-card h3 { font-size:17px; margin-bottom:8px; font-family:'Outfit',sans-serif; font-weight:600; }
+.feat-card p { font-size:13px; color:var(--ash); line-height:1.6; }
+
+.how-section { padding:80px 60px; background:var(--ink2); }
+.how-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:32px; margin-top:48px; }
+.how-step { display:flex; flex-direction:column; gap:12px; }
+.step-num { font-family:'Fraunces',serif; font-size:48px; font-weight:900; color:var(--red); opacity:.3; line-height:1; }
+.step-title { font-size:16px; font-weight:600; }
+.step-desc { font-size:13px; color:var(--ash); line-height:1.6; }
+
+.land-footer { padding:40px 60px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+.land-footer p { font-size:12px; color:var(--ash); }
+
+/* ── Auth ── */
+#authScreen {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background:var(--ink); position:relative;
+}
+#authScreen::before {
+  content:''; position:absolute; top:-100px; right:-100px; width:500px; height:500px;
+  background:radial-gradient(circle,rgba(192,57,43,.1) 0%,transparent 70%); pointer-events:none;
+}
+.auth-card {
+  width:100%; max-width:560px; background:var(--ink2); border:1px solid var(--line);
+  padding:44px; position:relative; z-index:1;
+}
+#registerForm .fg-row { grid-template-columns: 1fr 1fr; }
+.auth-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--red); }
+.auth-logo { font-family:'Fraunces',serif;font-size:26px;font-weight:900;letter-spacing:-1px;margin-bottom:4px; }
+.auth-logo em{color:var(--red);font-style:normal;}
+.auth-tag { font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ash);margin-bottom:32px; }
+.auth-title { font-size:22px;margin-bottom:24px;font-family:'Fraunces',serif;font-weight:600; }
+.auth-tabs { display:flex;margin-bottom:28px;border-bottom:1px solid var(--line); }
+.auth-tab { flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;color:var(--ash);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s; }
+.auth-tab.active { color:var(--mist);border-bottom-color:var(--red); }
+
+/* ── Form Elements ── */
+.fg { margin-bottom:16px; }
+.fg label { display:block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ash);margin-bottom:6px;font-weight:500; }
+.fg input,.fg textarea,.fg select {
+  width:100%;background:var(--ink3);border:1px solid var(--line);color:var(--mist);
+  padding:11px 13px;font-size:14px;outline:none;transition:border-color .2s;border-radius:var(--r);
+}
+.fg input:focus,.fg textarea:focus,.fg select:focus { border-color:var(--red); }
+.fg textarea { resize:vertical;min-height:90px; }
+.fg-row { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.fg-hint { font-size:11px;color:var(--ash);margin-top:4px; }
+.err-msg { background:rgba(155,28,28,.15);border:1px solid rgba(155,28,28,.4);color:#F87171;padding:10px 13px;font-size:12px;margin-bottom:14px;border-radius:var(--r); }
+.success-msg { background:rgba(26,122,69,.15);border:1px solid rgba(26,122,69,.4);color:#6EE7A0;padding:10px 13px;font-size:12px;margin-bottom:14px;border-radius:var(--r); }
+
+/* Password strength */
+.pw-strength { margin-top:6px;display:flex;gap:4px;align-items:center; }
+.pw-bar { flex:1;height:3px;border-radius:2px;background:var(--ink4);transition:background .3s; }
+.pw-bar.weak{background:#EF4444;} .pw-bar.fair{background:#F59E0B;} .pw-bar.strong{background:#10B981;}
+.pw-label{font-size:10px;color:var(--ash);min-width:40px;}
+
+/* Consent */
+.consent-box {
+  background:var(--ink3);border:1px solid var(--line);padding:14px;margin:16px 0;border-radius:var(--r);
+  font-size:12px;color:var(--ash);line-height:1.6;max-height:100px;overflow-y:auto;
+}
+.consent-check { display:flex;align-items:flex-start;gap:10px;margin-bottom:16px;cursor:pointer; }
+.consent-check input{width:16px;height:16px;accent-color:var(--red);flex-shrink:0;margin-top:2px;}
+.consent-check span{font-size:12px;color:var(--ash);line-height:1.5;}
+
+/* Buttons */
+.btn { display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;font-size:13px;font-weight:600;letter-spacing:.5px;border:none;cursor:pointer;transition:all .2s;border-radius:var(--r);font-family:'Outfit',sans-serif; }
+.btn-primary { background:var(--red);color:#fff;width:100%;margin-top:6px; }
+.btn-primary:hover{background:var(--red-d);}
+.btn-primary:disabled{background:var(--ink4);color:var(--ash);cursor:not-allowed;}
+.btn-ghost { background:transparent;border:1px solid var(--line);color:var(--slate); }
+.btn-ghost:hover{border-color:var(--red);color:var(--red);}
+.btn-sm { padding:7px 14px;font-size:12px; }
+.btn-danger { background:rgba(155,28,28,.15);border:1px solid rgba(155,28,28,.3);color:#F87171; }
+.btn-danger:hover{background:rgba(155,28,28,.3);}
+.btn-icon { padding:7px;border-radius:var(--r); }
+.spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite; }
+
+/* Auth link */
+.auth-link { text-align:center;font-size:13px;color:var(--ash);margin-top:16px; }
+.auth-link a { color:var(--red);cursor:pointer; }
+.auth-link a:hover{text-decoration:underline;}
+.back-link { display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ash);margin-bottom:20px;cursor:pointer; }
+.back-link:hover{color:var(--mist);}
+
+/* ── App Shell ── */
+#appShell { display:flex;height:100vh;overflow:hidden; }
+.sidebar {
+  width:240px;background:var(--ink2);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
+}
+.sb-head { padding:20px 16px;border-bottom:1px solid var(--line); }
+.sb-logo { font-family:'Fraunces',serif;font-size:18px;font-weight:900;letter-spacing:-1px; }
+.sb-logo em{color:var(--red);font-style:normal;}
+.sb-user { margin-top:10px; }
+.sb-user-name { font-size:13px;font-weight:600;color:var(--mist); }
+.sb-user-role { font-size:11px;color:var(--ash); }
+.sb-nav { flex:1;overflow-y:auto;padding:8px 0; }
+.nav-group-label { font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ash);padding:12px 16px 4px;font-weight:500; }
+.nav-item {
+  display:flex;align-items:center;gap:10px;padding:9px 16px;
+  font-size:13px;color:var(--slate);cursor:pointer;transition:all .15s;
+  border-left:2px solid transparent;
+}
+.nav-item:hover{background:var(--ink3);color:var(--mist);}
+.nav-item.active{background:var(--ink3);border-left-color:var(--red);color:var(--mist);}
+.nav-item svg{flex-shrink:0;opacity:.7;}
+.nav-item.active svg{opacity:1;}
+.sb-history { padding:0 0 8px; }
+.sb-hist-item { padding:8px 16px;cursor:pointer;transition:background .15s; }
+.sb-hist-item:hover{background:var(--ink3);}
+.sb-hist-proposal { font-size:11px;color:var(--slate);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px; }
+.sb-hist-meta { display:flex;align-items:center;gap:6px; }
+.vbadge { font-size:9px;font-weight:700;padding:2px 5px;letter-spacing:.3px; }
+.vbadge.ship{background:var(--go-g);color:#34D399;}
+.vbadge.noship{background:var(--stop-g);color:#F87171;}
+.vbadge.cond{background:var(--warn-g);color:#FBB040;}
+.vbadge.unk{background:var(--ink4);color:var(--ash);}
+.sb-hist-date { font-size:10px;color:var(--ash); }
+.sb-foot { padding:12px 16px;border-top:1px solid var(--line); }
+.logout-btn { width:100%;background:transparent;border:1px solid var(--line);color:var(--ash);padding:8px;font-size:11px;font-family:'Outfit',sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:var(--r); }
+.logout-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* ── Main / Pages ── */
+.main { flex:1;overflow-y:auto;background:var(--ink); }
+.page { display:none;padding:40px;max-width:1000px;margin:0 auto; }
+.page.active { display:block; }
+.page-head { margin-bottom:32px; }
+.page-title { font-family:'Fraunces',serif;font-size:32px;font-weight:600;letter-spacing:-1px;margin-bottom:6px; }
+.page-sub { font-size:14px;color:var(--ash); }
+
+/* ── Cards ── */
+.card { background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);padding:24px;margin-bottom:16px;position:relative; }
+.card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--red);border-radius:var(--r) var(--r) 0 0; }
+.card-title { font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--red);font-weight:600;margin-bottom:18px; }
+
+/* ── Agent chips ── */
+.agents-chips { display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:20px; }
+.agent-chip { background:var(--ink3);border:1px solid var(--line);padding:10px 6px;text-align:center;font-size:10px;color:var(--ash);letter-spacing:.5px;text-transform:uppercase;font-weight:500;border-radius:var(--r); }
+.agent-chip .aic { font-size:20px;margin-bottom:4px;display:block; }
+
+/* Upload */
+.upload-zone {
+  border:2px dashed var(--line);padding:28px;text-align:center;cursor:pointer;
+  transition:all .2s;border-radius:var(--r);background:var(--ink3);
+}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--red);background:rgba(192,57,43,.04);}
+.upload-icon{font-size:28px;margin-bottom:8px;opacity:.4;}
+.upload-text{font-size:13px;color:var(--ash);}
+.upload-text span{color:var(--red);}
+.file-list{margin-top:10px;}
+.file-item{display:flex;align-items:center;justify-content:space-between;background:var(--ink4);padding:8px 12px;margin-bottom:5px;border-radius:var(--r);font-size:12px;}
+.file-name{color:var(--slate);font-family:'DM Mono',monospace;}
+.file-rm{color:var(--red);cursor:pointer;font-size:18px;line-height:1;}
+
+/* Char count */
+.char-hint{font-size:11px;color:var(--ash);text-align:right;margin-top:2px;}
+
+/* ── Loading overlay ── */
+#loadingOverlay {
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:1000;
+  align-items:center;justify-content:center;flex-direction:column;gap:28px;
+}
+#loadingOverlay.on { display:flex; }
+.loading-title{font-family:'Fraunces',serif;font-size:24px;font-weight:600;}
+.loading-agents{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;}
+.la {
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  opacity:.25;transition:opacity .4s;
+}
+.la.on{opacity:1;}
+.la-icon{
+  width:52px;height:52px;border-radius:50%;background:var(--ink3);border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  transition:border-color .4s;
+}
+.la.on .la-icon{border-color:var(--red);animation:pulse 1.5s ease-in-out infinite;}
+.la-label{font-size:10px;color:var(--ash);letter-spacing:1px;text-transform:uppercase;}
+.loading-bar{width:320px;height:2px;background:var(--ink3);overflow:hidden;border-radius:2px;}
+.loading-bar-inner{height:100%;background:var(--red);animation:loadbar 2.2s ease-in-out infinite;}
+@keyframes loadbar{0%{transform:translateX(-100%);}100%{transform:translateX(400%);}}
+.loading-sub{font-size:12px;color:var(--ash);letter-spacing:1px;text-transform:uppercase;}
+
+/* ── Results ── */
+.verdict-hero {
+  padding:40px;margin:-40px -40px 32px;position:relative;overflow:hidden;
+}
+.verdict-hero::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;}
+.verdict-hero.ship{background:linear-gradient(135deg,#051A0E,var(--ink));border-left:4px solid var(--go);}
+.verdict-hero.noship{background:linear-gradient(135deg,#1A0505,var(--ink));border-left:4px solid var(--stop);}
+.verdict-hero.cond{background:linear-gradient(135deg,#1A0E00,var(--ink));border-left:4px solid var(--warn);}
+.v-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ash);margin-bottom:8px;}
+.v-text{font-family:'Fraunces',serif;font-size:48px;font-weight:900;line-height:1;margin-bottom:16px;letter-spacing:-2px;}
+.v-text.ship{color:#34D399;} .v-text.noship{color:#F87171;} .v-text.cond{color:#FBB040;}
+.v-meta{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.v-conf{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ash);}
+.conf-dot{width:8px;height:8px;border-radius:50%;}
+.conf-dot.high{background:#34D399;} .conf-dot.medium{background:#FBB040;} .conf-dot.low{background:#F87171;}
+.v-score{font-family:'DM Mono',monospace;font-size:13px;color:var(--ash);}
+.v-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.dl-btn{background:var(--red);color:#fff;padding:10px 20px;font-size:12px;font-weight:600;letter-spacing:.5px;border:none;cursor:pointer;transition:background .2s;display:inline-flex;align-items:center;gap:8px;border-radius:var(--r);}
+.dl-btn:hover{background:var(--red-d);}
+.outline-btn{background:transparent;border:1px solid var(--line);color:var(--slate);padding:10px 20px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;border-radius:var(--r);}
+.outline-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* Risk grid */
+.risk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);margin-bottom:24px;border:1px solid var(--line);}
+.risk-cell{background:var(--ink2);padding:14px;}
+.risk-agent{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ash);margin-bottom:6px;font-weight:500;}
+.risk-badge{display:inline-block;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:.3px;margin-bottom:8px;}
+.risk-badge.CRITICAL{background:var(--stop-g);color:#F87171;}
+.risk-badge.HIGH{background:var(--warn-g);color:#FBB040;}
+.risk-badge.MEDIUM{background:rgba(251,191,36,.12);color:#FCD34D;}
+.risk-badge.LOW{background:var(--go-g);color:#34D399;}
+.risk-detail{font-size:11px;color:var(--slate);line-height:1.4;}
+
+/* Collapsible sections */
+.csec{background:var(--ink2);border:1px solid var(--line);margin-bottom:12px;border-radius:var(--r);}
+.csec-head{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s;}
+.csec-head:hover{background:var(--ink3);}
+.csec-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.csec-chev{font-size:16px;color:var(--ash);transition:transform .2s;}
+.csec-chev.open{transform:rotate(180deg);}
+.csec-body{display:none;padding:20px;border-top:1px solid var(--line);}
+.csec-body.open{display:block;}
+
+/* Findings */
+.finding{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line2);}
+.finding:last-child{border-bottom:none;}
+.find-num{font-family:'Fraunces',serif;font-size:22px;color:var(--red);opacity:.4;flex-shrink:0;line-height:1.2;width:26px;}
+.find-text{font-size:13px;color:var(--mist);line-height:1.6;}
+
+/* Agent tabs */
+.agent-tabs{display:flex;border-bottom:1px solid var(--line);overflow-x:auto;}
+.agent-tab{padding:11px 18px;font-size:12px;font-weight:500;color:var(--ash);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
+.agent-tab:hover{color:var(--mist);}
+.agent-tab.active{color:var(--mist);border-bottom-color:var(--red);}
+.agent-out{display:none;padding:20px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.8;color:var(--slate);white-space:pre-wrap;max-height:480px;overflow-y:auto;}
+.agent-out.active{display:block;}
+
+/* ── History page ── */
+.hist-grid{display:grid;gap:12px;}
+.hist-card{background:var(--ink2);border:1px solid var(--line);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color .2s;border-radius:var(--r);}
+.hist-card:hover{border-color:rgba(192,57,43,.4);}
+.hc-left{flex:1;min-width:0;}
+.hc-proposal{font-size:14px;font-weight:500;color:var(--mist);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hc-meta{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ash);}
+.hc-right{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+
+/* ── Profile page ── */
+.profile-header{display:flex;align-items:center;gap:20px;margin-bottom:32px;padding:24px;background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);}
+.profile-avatar{width:60px;height:60px;border-radius:50%;background:var(--red-g);border:2px solid rgba(192,57,43,.3);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:24px;font-weight:600;color:var(--red);flex-shrink:0;}
+.profile-name{font-family:'Fraunces',serif;font-size:22px;font-weight:600;letter-spacing:-.5px;margin-bottom:4px;}
+.profile-meta{font-size:12px;color:var(--ash);}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--ink2);border:1px solid var(--line);padding:20px;text-align:center;border-radius:var(--r);}
+.stat-num{font-family:'Fraunces',serif;font-size:32px;font-weight:600;color:var(--red);margin-bottom:4px;}
+.stat-label{font-size:11px;color:var(--ash);text-transform:uppercase;letter-spacing:1px;}
+
+/* ── Admin page ── */
+.admin-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:24px;}
+.admin-tab{padding:12px 20px;font-size:13px;font-weight:500;color:var(--ash);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.admin-tab:hover{color:var(--mist);}
+.admin-tab.active{color:var(--mist);border-bottom-color:var(--red);}
+.admin-panel{display:none;} .admin-panel.active{display:block;}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+.admin-stat{background:var(--ink2);border:1px solid var(--line);padding:20px;border-radius:var(--r);}
+.admin-stat-n{font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--red);}
+.admin-stat-l{font-size:11px;color:var(--ash);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{padding:10px 14px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--ash);text-align:left;border-bottom:1px solid var(--line);font-weight:500;}
+.data-table td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--line2);color:var(--slate);}
+.data-table tr:hover td{background:var(--ink3);}
+.badge-active{background:var(--go-g);color:#34D399;padding:2px 8px;font-size:10px;font-weight:700;}
+.badge-inactive{background:var(--stop-g);color:#F87171;padding:2px 8px;font-size:10px;font-weight:700;}
+.badge-admin{background:rgba(192,57,43,.15);color:var(--red);padding:2px 8px;font-size:10px;font-weight:700;}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:80px 20px;color:var(--ash);}
+.empty-icon{font-size:48px;margin-bottom:16px;opacity:.3;}
+.empty-title{font-family:'Fraunces',serif;font-size:20px;color:var(--mist);margin-bottom:8px;}
+
+/* ── About page ── */
+.about-hero{text-align:center;padding:60px 0 40px;}
+.about-hero h1{font-size:clamp(32px,5vw,56px);font-weight:900;letter-spacing:-2px;margin-bottom:16px;}
+.about-hero p{font-size:16px;color:var(--ash);max-width:560px;margin:0 auto;}
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:40px;}
+.about-card{background:var(--ink2);border:1px solid var(--line);padding:28px;border-radius:var(--r);}
+.about-card h3{font-size:17px;margin-bottom:10px;}
+.about-card p{font-size:13px;color:var(--ash);line-height:1.6;}
+.tech-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:32px;}
+.tech-pill{background:var(--ink2);border:1px solid var(--line);padding:6px 14px;font-size:12px;color:var(--ash);font-family:'DM Mono',monospace;border-radius:var(--r);}
+
+
+/* ── Multi-step form ── */
+.step-indicator {
+  display:flex; align-items:center; margin-bottom:28px; padding:20px 0;
+}
+.step-dot {
+  display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0;
+  position:relative; cursor:default;
+}
+.step-dot span {
+  width:32px; height:32px; border-radius:50%;
+  background:var(--ink3); border:2px solid var(--line);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:600; color:var(--ash);
+  transition:all .3s;
+}
+.step-dot.active span { background:var(--red); border-color:var(--red); color:#fff; }
+.step-dot.done span { background:var(--go); border-color:var(--go); color:#fff; }
+.step-label {
+  font-size:10px; letter-spacing:.5px; text-transform:uppercase;
+  color:var(--ash); white-space:nowrap; font-weight:500;
+}
+.step-dot.active .step-label { color:var(--mist); }
+.step-line {
+  flex:1; height:2px; background:var(--line); margin:0 8px;
+  margin-bottom:20px; transition:background .3s;
+}
+.step-line.done { background:var(--go); }
+.review-step { display:none; }
+.review-step.active { display:block; animation:fadeUp .3s ease both; }
+.step-nav {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:12px; padding-top:12px;
+}
+.step-nav .btn-ghost { padding:11px 20px; }
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .sidebar{width:200px;}
+  .fg-row{grid-template-columns:1fr;}
+  .agents-chips{grid-template-columns:repeat(3,1fr);}
+  .risk-grid{grid-template-columns:repeat(2,1fr);}
+  .admin-stat-grid{grid-template-columns:repeat(2,1fr);}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
+  .page{padding:20px;}
+  .land-nav{padding:16px 20px;}
+  .features-section,.how-section{padding:60px 20px;}
+}
+@media(max-width:600px){
+  .sidebar{display:none;}
+  .hero h1{font-size:36px;}
+  .risk-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- Landing -->
+<div id="landing">
+  <nav class="land-nav">
+    <div class="logo">Red<em>board</em></div>
+    <div class="land-nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a onclick="goTo('about')">About</a>
+    </div>
+    <div class="land-nav-cta">
+      <button class="btn btn-ghost btn-sm" onclick="showAuth('login')">Sign in</button>
+      <button class="btn btn-primary btn-sm" onclick="showAuth('register')" style="margin-top:0;width:auto;">Get started</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-eyebrow">⚡ Powered by Google ADK + Gemini 2.5</div>
+    <h1>Every AI feature<br>deserves a <em>dissenting voice.</em></h1>
+    <p class="hero-sub">Five adversarial AI agents debate your shipping decision in parallel. One structured memo tells you what nobody wants to say out loud.</p>
+    <div class="hero-cta">
+      <button class="btn btn-primary" onclick="showAuth('register')" style="width:auto;margin-top:0;">Start your first review →</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('how').scrollIntoView()">See how it works</button>
+    </div>
+  </section>
+
+  <div class="agents-row">
+    <div class="agent-pill"><span>🛡️</span> Safety Agent</div>
+    <div class="agent-pill"><span>💼</span> Business Agent</div>
+    <div class="agent-pill"><span>📊</span> Data Quality Agent</div>
+    <div class="agent-pill"><span>⚖️</span> Compliance Agent</div>
+    <div class="agent-pill"><span>🔥</span> Contrarian Agent</div>
+    <div class="agent-pill"><span>📄</span> Synthesizer Agent</div>
+  </div>
+
+  <section class="features-section" id="features">
+    <div class="section-label">What Redboard offers</div>
+    <h2 class="section-title">Built for teams that<br>ship AI seriously.</h2>
+    <p class="section-sub">Not another chatbot. A structured adversarial review system that organizations actually trust.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">⚔️</div>
+        <h3>Parallel Adversarial Review</h3>
+        <p>Five specialized agents attack your proposal simultaneously from safety, business, data, compliance, and contrarian angles.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📎</div>
+        <h3>Document-Grounded Analysis</h3>
+        <p>Upload eval reports, model cards, architecture docs, and code. Agents read every file and cite specific content in their analysis.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📋</div>
+        <h3>Branded PDF Decision Memo</h3>
+        <p>Every review produces a professionally formatted PDF memo with verdict, risk summary, findings, and conditions — ready to share with leadership.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚖️</div>
+        <h3>Minority Dissent Preserved</h3>
+        <p>Unlike consensus AI tools, Redboard never averages away a CRITICAL finding. Every objection survives to the final memo.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔒</div>
+        <h3>Enterprise-Grade Security</h3>
+        <p>JWT auth, bcrypt passwords, input sanitization, security headers, audit logging, and per-user data isolation built in from day one.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📈</div>
+        <h3>Review History & Audit Trail</h3>
+        <p>Every decision is stored with full audit logging. Track your shipping decisions over time, download past memos, and demonstrate governance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-section" id="how">
+    <div class="section-label">How it works</div>
+    <h2 class="section-title">From brief to memo<br>in minutes.</h2>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="step-num">01</div>
+        <div class="step-title">Submit your decision brief</div>
+        <div class="step-desc">Fill in your proposal, context, team, objectives, tech stack, and known risks. Attach supporting documents.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">02</div>
+        <div class="step-title">Five agents debate in parallel</div>
+        <div class="step-desc">Safety, Business, Data, Compliance, and Contrarian agents each read your full brief and challenge it from their perspective.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">03</div>
+        <div class="step-title">Synthesizer produces the memo</div>
+        <div class="step-desc">A sixth agent synthesizes all reports into a structured verdict: SHIP, DO NOT SHIP, or SHIP WITH CONDITIONS.</div>
+      </div>
+      <div class="how-step">
+        <div class="step-num">04</div>
+        <div class="step-title">Download and share</div>
+        <div class="step-desc">A branded PDF memo is generated instantly. Share with your team, store for compliance, or use in your next board meeting.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="land-footer">
+    <div class="logo" style="font-size:16px;">Red<em>board</em></div>
+    <p>Adversarial AI Review Panel — Built for Google for Startups AI Agents Challenge 2026</p>
+    <p>© 2026 Redboard</p>
+  </footer>
+</div>
+
+<!-- Auth -->
+<div id="authScreen" class="hidden">
+  <div class="auth-card">
+    <div class="back-link" onclick="showLanding()">← Back to home</div>
+    <div class="auth-logo">Red<em>board</em></div>
+    <div class="auth-tag">Adversarial AI Review Panel</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Create Account</div>
+    </div>
+
+    <!-- Login form -->
+    <div id="loginForm">
+      <div id="loginErr" class="err-msg hidden"></div>
+      <div class="fg"><label>Email</label><input type="email" id="lEmail" placeholder="you@company.com"></div>
+      <div class="fg"><label>Password</label><input type="password" id="lPw" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLogin()"></div>
+      <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Sign In</button>
+      <div style="text-align:center;margin-top:12px"><a onclick="showForgot()" style="color:var(--red);font-size:12px;cursor:pointer;">Forgot password?</a></div>
+    </div>
+
+    <!-- Forgot password form -->
+    <div id="forgotForm" class="hidden">
+      <div style="margin-bottom:16px;font-size:13px;color:var(--ash);">Enter your registered email. We will send a 6-digit reset code.</div>
+      <div id="forgotErr" class="err-msg hidden"></div>
+      <div id="forgotSuccess" class="success-msg hidden"></div>
+      <div class="fg"><label>Email</label><input type="email" id="fEmail" placeholder="you@company.com"></div>
+      <button class="btn btn-primary" id="forgotBtn" onclick="handleForgot()">Send Reset Code</button>
+      <div style="text-align:center;margin-top:10px"><a onclick="showOTP()" style="color:var(--ash);font-size:12px;cursor:pointer;">Already have a code?</a></div>
+      <div style="text-align:center;margin-top:6px"><a onclick="switchAuthTab('login')" style="color:var(--ash);font-size:12px;cursor:pointer;">Back to sign in</a></div>
+    </div>
+
+    <!-- OTP reset form -->
+    <div id="otpForm" class="hidden">
+      <div style="margin-bottom:16px;font-size:13px;color:var(--ash);">Enter the 6-digit code from your email and set a new password.</div>
+      <div id="otpErr" class="err-msg hidden"></div>
+      <div id="otpSuccess" class="success-msg hidden"></div>
+      <div class="fg"><label>Email</label><input type="email" id="otpEmail" placeholder="you@company.com"></div>
+      <div class="fg"><label>Reset Code</label><input type="text" id="otpCode" placeholder="000000" maxlength="6" style="font-family:monospace;letter-spacing:8px;font-size:22px;text-align:center;"></div>
+      <div class="fg"><label>New Password</label><input type="password" id="otpPw" placeholder="10+ chars, upper, lower, number, symbol"></div>
+      <div class="fg"><label>Confirm Password</label><input type="password" id="otpPwC" placeholder="Confirm new password"></div>
+      <button class="btn btn-primary" id="otpBtn" onclick="handleOTP()">Reset Password</button>
+      <div style="text-align:center;margin-top:6px"><a onclick="switchAuthTab('login')" style="color:var(--ash);font-size:12px;cursor:pointer;">Back to sign in</a></div>
+    </div>
+
+    <!-- Register form -->
+    <div id="registerForm" class="hidden">
+      <div id="regErr" class="err-msg hidden"></div>
+      <div class="fg-row">
+        <div class="fg"><label>Full Name *</label><input type="text" id="rName" placeholder="Puja Ankitha"></div>
+        <div class="fg">
+          <label>Phone *</label>
+          <div style="display:flex;gap:6px;">
+            <select id="rPhoneCode" style="width:105px;background:var(--ink3);border:1px solid var(--line);color:var(--mist);padding:11px 6px;font-size:12px;outline:none;border-radius:var(--r);flex-shrink:0;">
+              <option value="+1">US +1</option><option value="+44">UK +44</option>
+              <option value="+91" selected>IN +91</option><option value="+61">AU +61</option>
+              <option value="+81">JP +81</option><option value="+49">DE +49</option>
+              <option value="+33">FR +33</option><option value="+65">SG +65</option>
+              <option value="+971">AE +971</option><option value="+82">KR +82</option>
+              <option value="+55">BR +55</option><option value="+52">MX +52</option>
+              <option value="+86">CN +86</option><option value="+92">PK +92</option>
+              <option value="+60">MY +60</option><option value="+66">TH +66</option>
+              <option value="+234">NG +234</option><option value="+27">ZA +27</option>
+              <option value="+90">TR +90</option><option value="+966">SA +966</option>
+              <option value="+31">NL +31</option><option value="+34">ES +34</option>
+              <option value="+39">IT +39</option><option value="+46">SE +46</option>
+              <option value="+41">CH +41</option><option value="+48">PL +48</option>
+              <option value="+30">GR +30</option><option value="+972">IL +972</option>
+              <option value="+94">LK +94</option><option value="+977">NP +977</option>
+              <option value="+880">BD +880</option><option value="+7">RU +7</option>
+            </select>
+            <input type="tel" id="rPhone" placeholder="98765 43210" style="flex:1;">
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label>Email *</label><input type="email" id="rEmail" placeholder="you@company.com"></div>
+      <div class="fg-row">
+        <div class="fg"><label>Company</label><input type="text" id="rCompany" placeholder="Acme Corp"></div>
+        <div class="fg"><label>Role</label><input type="text" id="rRole" placeholder="ML Engineer"></div>
+      </div>
+      <div class="fg">
+        <label>Password * <span style="color:var(--ash);font-size:10px;letter-spacing:0;text-transform:none;font-weight:400">(min 10 chars, upper, lower, number, symbol)</span></label>
+        <input type="password" id="rPw" placeholder="••••••••••" oninput="checkPasswordStrength(this.value)">
+        <div class="pw-strength">
+          <div class="pw-bar" id="pwb1"></div>
+          <div class="pw-bar" id="pwb2"></div>
+          <div class="pw-bar" id="pwb3"></div>
+          <div class="pw-bar" id="pwb4"></div>
+          <span class="pw-label" id="pwLabel"></span>
+        </div>
+      </div>
+      <div class="fg"><label>Confirm Password *</label><input type="password" id="rPwC" placeholder="••••••••••"></div>
+
+      <div class="consent-box">
+        By creating an account, you acknowledge that: (1) You have the legal right to upload and share any documents submitted for review. (2) Redboard processes your submission data using AI systems to generate adversarial analysis reports. (3) Your data is stored securely and used solely for generating your requested reviews. (4) You will not submit confidential third-party information without appropriate authorization. (5) Redboard's analysis is for decision-support only and does not constitute legal, financial, or regulatory advice.
+      </div>
+      <label class="consent-check">
+        <input type="checkbox" id="consentCheck">
+        <span>I have read and agree to the data processing terms above. I confirm I have rights to any data I submit.</span>
+      </label>
+
+      <button class="btn btn-primary" id="registerBtn" onclick="handleRegister()">Create Account</button>
+      <div class="auth-link">Admin? Default admin credentials sent to administrator.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Verification Pending Screen -->
+<div id="verifyScreen" class="hidden" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--ink);">
+  <div style="max-width:480px;width:100%;background:var(--ink2);border:1px solid var(--line);border-top:3px solid var(--red);padding:44px;text-align:center;">
+    <div style="font-size:22px;font-weight:900;letter-spacing:-1px;color:var(--mist);margin-bottom:28px;font-family:'Fraunces',serif;">
+      Red<span style="color:var(--red);">board</span>
+    </div>
+    <div style="font-size:48px;margin-bottom:20px;">📬</div>
+    <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:12px;">Check your inbox</div>
+    <div style="font-size:14px;color:var(--ash);line-height:1.7;margin-bottom:28px;">
+      We sent a verification link to <strong style="color:var(--mist);" id="verifyEmailDisplay">your email</strong>.<br>
+      Click the link in that email to activate your account.<br>
+      <span style="font-size:12px;">The link expires in 24 hours.</span>
+    </div>
+    <div style="background:var(--ink3);border:1px solid var(--line);padding:16px;margin-bottom:20px;font-size:13px;color:var(--ash);line-height:1.6;">
+      Can't find it? Check your spam folder. Gmail users: check the Promotions tab.
+    </div>
+    <button class="btn btn-ghost" onclick="resendVerification()" id="resendBtn" style="width:100%;margin-bottom:10px;">Resend verification email</button>
+    <button class="btn btn-ghost" onclick="showAuth('login')" style="width:100%;font-size:12px;color:var(--ash);">Back to sign in</button>
+    <div id="resendMsg" class="success-msg hidden" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- Email Verified Success Banner (shown on ?verified=1) -->
+<div id="verifiedBanner" class="hidden" style="position:fixed;top:0;left:0;right:0;background:var(--go);color:#fff;padding:12px;text-align:center;z-index:9999;font-size:13px;font-weight:600;">
+  ✓ Email verified successfully! You can now sign in.
+  <span onclick="document.getElementById('verifiedBanner').classList.add('hidden')" style="cursor:pointer;margin-left:16px;opacity:.7;">×</span>
+</div>
+
+<!-- App Shell -->
+<div id="appShell" class="hidden">
+  <div class="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo">Red<em>board</em></div>
+      <div class="sb-user">
+        <div class="sb-user-name" id="sbName">—</div>
+        <div class="sb-user-role" id="sbRole">—</div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="nav-group-label">Workspace</div>
+      <div class="nav-item active" id="navReview" onclick="showPage('review')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        New Review
+      </div>
+      <div class="nav-item" id="navHistory" onclick="showPage('history')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Review History
+      </div>
+      <div class="nav-item" id="navProfile" onclick="showPage('profile')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My Profile
+      </div>
+      <div class="nav-item" id="navAbout" onclick="showPage('about')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        About Redboard
+      </div>
+      <div class="nav-item hidden" id="navAdmin" onclick="showPage('admin')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admin Panel
+      </div>
+
+      <div class="nav-group-label" style="margin-top:8px">Recent</div>
+      <div class="sb-history" id="sbHistory"></div>
+    </div>
+    <div class="sb-foot">
+      <button class="logout-btn" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- New Review Page -->
+    <div class="page active" id="pageReview">
+      <div class="page-head">
+        <div class="page-title">New Adversarial Review</div>
+        <div class="page-sub">Complete the brief in steps. Six agents will read everything and challenge your proposal in parallel.</div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="step-indicator">
+        <div class="step-dot active" id="sd1"><span>1</span><div class="step-label">The Proposal</div></div>
+        <div class="step-line" id="sl1"></div>
+        <div class="step-dot" id="sd2"><span>2</span><div class="step-label">Company Context</div></div>
+        <div class="step-line" id="sl2"></div>
+        <div class="step-dot" id="sd3"><span>3</span><div class="step-label">Risk & Team</div></div>
+        <div class="step-line" id="sl3"></div>
+        <div class="step-dot" id="sd4"><span>4</span><div class="step-label">Documents</div></div>
+      </div>
+
+      <!-- Step 1: The Proposal -->
+      <div class="review-step active" id="step1">
+        <div class="agents-chips">
+          <div class="agent-chip"><span class="aic">🛡️</span>Safety</div>
+          <div class="agent-chip"><span class="aic">💼</span>Business</div>
+          <div class="agent-chip"><span class="aic">📊</span>Data</div>
+          <div class="agent-chip"><span class="aic">⚖️</span>Compliance</div>
+          <div class="agent-chip"><span class="aic">🔥</span>Contrarian</div>
+        </div>
+        <!-- OR: Upload full project report -->
+        <div style="background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);padding:20px 24px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="flex:1;height:1px;background:var(--line);"></div>
+            <span style="font-size:13px;font-weight:600;color:var(--ash);letter-spacing:1px;">SKIP THE FORM</span>
+            <div style="flex:1;height:1px;background:var(--line);"></div>
+          </div>
+          <div style="font-size:14px;color:var(--mist);font-weight:500;margin-bottom:6px;">Upload your complete project brief</div>
+          <div style="font-size:12px;color:var(--ash);line-height:1.7;margin-bottom:14px;">
+            Upload a single document that describes your project and we will generate the full review automatically — no form filling needed.<br>
+            <span style="color:var(--slate);">For best results, your document should include:</span> proposal description, model architecture, training data details, evaluation metrics, team and timeline, known risks, tech stack, stakeholders, regulatory context, and deployment plan.
+          </div>
+          <div class="upload-zone" id="uploadZoneFull" onclick="document.getElementById('fileInFull').click()" style="padding:20px;">
+            <div class="upload-icon" style="font-size:24px;">📄</div>
+            <div class="upload-text">Drop your project brief here or <span>browse</span></div>
+            <div class="upload-text" style="font-size:11px;margin-top:3px;">PDF · TXT · MD · DOCX — max 10MB</div>
+          </div>
+          <input type="file" id="fileInFull" style="display:none" onchange="handleFullReport(this.files)" accept=".pdf,.txt,.md,.docx">
+          <div id="fullReportFile" style="display:none;margin-top:10px;">
+            <div class="file-item">
+              <span class="file-name" id="fullReportName">—</span>
+              <span class="file-rm" onclick="clearFullReport()">×</span>
+            </div>
+            <button class="btn btn-primary" onclick="submitFullReport()" style="margin-top:10px;padding:14px;font-size:13px;letter-spacing:1px;">
+              GENERATE REVIEW FROM DOCUMENT →
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="flex:1;height:1px;background:var(--line);"></div>
+          <span style="font-size:11px;font-weight:600;color:var(--ash);letter-spacing:2px;text-transform:uppercase;">Or fill the form</span>
+          <div style="flex:1;height:1px;background:var(--line);"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">What are you proposing to ship?</div>
+          <div class="fg">
+            <label>Project Name * <span style="color:var(--ash);font-size:10px;font-weight:400;letter-spacing:0;text-transform:none;">Used as the report filename and email subject</span></label>
+            <input type="text" id="projectName" placeholder="e.g. ClaimsIQ v1.0, CustomerBot Launch, RAG Pipeline Prod" style="font-size:14px;">
+          </div>
+          <div class="fg">
+            <label>Proposal *</label>
+            <textarea id="proposal" maxlength="2000" oninput="cc(this,'ccProposal')" placeholder="Name the system, what it does, who it affects, and the deployment scope. Be specific — vague proposals get generic analysis.&#10;&#10;Example: Deploy a multi-tenant AI claims processing assistant that auto-triages 10,000 insurance claims/day across 12 enterprise clients, using LLM-based document extraction + rule engine..."></textarea>
+            <div class="char-hint"><span id="ccProposal">0</span>/2000</div>
+          </div>
+          <div class="fg">
+            <label>Context & Technical Details *</label>
+            <textarea id="context" maxlength="4000" oninput="cc(this,'ccContext')" style="min-height:160px" placeholder="Include ALL of: model architecture, training data (size, source, date range), evaluation metrics (accuracy, precision, recall, F1), test set size and composition, deployment environment, latency requirements, known limitations, prior A/B testing or shadow mode results, any existing user research..."></textarea>
+            <div class="char-hint"><span id="ccContext">0</span>/4000</div>
+          </div>
+          <div class="fg">
+            <label>Objectives — What does success look like?</label>
+            <textarea id="objectives" maxlength="1000" oninput="cc(this,'ccObj')" placeholder="Specific KPIs, target metrics, business outcomes. e.g. Reduce claim processing time from 8 days to 24 hours. Cut costs 35%. Process 10K claims/day."></textarea>
+            <div class="char-hint"><span id="ccObj">0</span>/1000</div>
+          </div>
+        </div>
+        <div class="step-nav">
+          <div></div>
+          <button class="btn btn-primary" onclick="goStep(2)" style="width:auto;margin-top:0;">Next: Company Context →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Company Context -->
+      <div class="review-step" id="step2">
+        <div class="card">
+          <div class="card-title">Company & User Context</div>
+          <div class="fg-row">
+            <div class="fg">
+              <label>Team</label>
+              <input type="text" id="team" placeholder="e.g. ML Platform, 3 engineers, 1 PM, no compliance review">
+            </div>
+            <div class="fg">
+              <label>Timeline</label>
+              <input type="text" id="timeline" placeholder="e.g. Launch in 3 weeks, Q3 board deadline">
+            </div>
+          </div>
+          <div class="fg-row">
+            <div class="fg">
+              <label>User Base Size</label>
+              <input type="text" id="userbase" placeholder="e.g. 50,000 MAU, 12 enterprise clients">
+            </div>
+            <div class="fg">
+              <label>User Domains / Verticals</label>
+              <input type="text" id="domain" placeholder="e.g. Insurance, Healthcare, Finance, Retail">
+            </div>
+          </div>
+          <div class="fg-row">
+            <div class="fg">
+              <label>Geographies</label>
+              <input type="text" id="geographies" placeholder="e.g. US only, EU + APAC, Global">
+            </div>
+            <div class="fg">
+              <label>User Type</label>
+              <input type="text" id="usertype" placeholder="e.g. B2B enterprise, B2C consumers, internal ops team">
+            </div>
+          </div>
+          <div class="fg">
+            <label>Tech Stack</label>
+            <input type="text" id="techStack" placeholder="e.g. GPT-4o, LangChain, PostgreSQL, AWS ECS, Redis, Textract...">
+          </div>
+          <div class="fg">
+            <label>Stakeholders affected</label>
+            <textarea id="stakeholders" style="min-height:80px" placeholder="Who is affected by this system? End users, regulators, internal teams, partner companies, downstream systems..."></textarea>
+          </div>
+        </div>
+        <div class="step-nav">
+          <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+          <button class="btn btn-primary" onclick="goStep(3)" style="width:auto;margin-top:0;">Next: Risk & Team →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Risk & Team -->
+      <div class="review-step" id="step3">
+        <div class="card">
+          <div class="card-title">Risk Assessment & Governance</div>
+          <div class="fg">
+            <label>Known Risks you have already identified</label>
+            <textarea id="risksKnown" style="min-height:100px" placeholder="Risks the team is already aware of and how you plan to mitigate them. Do not hide risks — the agents will probe harder if you do not disclose them upfront.&#10;&#10;e.g. Model struggles with non-English documents. Rerouting to manual review for low confidence. No HIPAA BAA in place yet..."></textarea>
+          </div>
+          <div class="fg-row">
+            <div class="fg">
+              <label>Regulatory Environment</label>
+              <input type="text" id="regulatory" placeholder="e.g. GDPR, HIPAA, EU AI Act High-Risk, CCPA, FINRA">
+            </div>
+            <div class="fg">
+              <label>Data Sensitivity Level</label>
+              <select id="dataSensitivity" style="background:var(--ink3);border:1px solid var(--line);color:var(--mist);padding:11px 13px;font-size:14px;outline:none;border-radius:var(--r);width:100%;">
+                <option value="">Select level</option>
+                <option value="Public — no PII">Public — no PII</option>
+                <option value="Internal — anonymized data">Internal — anonymized data</option>
+                <option value="Confidential — PII present">Confidential — PII present</option>
+                <option value="Highly Sensitive — financial/medical/legal data">Highly Sensitive — financial/medical/legal data</option>
+                <option value="Critical — government/defence/infrastructure">Critical — government/defence/infrastructure</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg-row">
+            <div class="fg">
+              <label>Human Oversight Plan</label>
+              <input type="text" id="humanOversight" placeholder="e.g. Human-in-the-loop for low confidence, full automation for routine cases">
+            </div>
+            <div class="fg">
+              <label>Rollback / Incident Plan</label>
+              <input type="text" id="rollbackPlan" placeholder="e.g. Feature flag toggle, shadow mode fallback, 24h on-call rotation">
+            </div>
+          </div>
+          <div class="fg">
+            <label>Success Metrics you will monitor post-launch</label>
+            <input type="text" id="successMetrics" placeholder="e.g. Daily accuracy on production data, user satisfaction score, escalation rate, latency p99...">
+          </div>
+        </div>
+        <div class="step-nav">
+          <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+          <button class="btn btn-primary" onclick="goStep(4)" style="width:auto;margin-top:0;">Next: Documents →</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Documents & Submit -->
+      <div class="review-step" id="step4">
+        <div class="card">
+          <div class="card-title">Supporting Documents (Optional but Recommended)</div>
+          <div style="font-size:13px;color:var(--ash);margin-bottom:16px;line-height:1.6;">
+            Upload any documents that support or describe your proposal. Agents will read and cite specific content.
+            The more you provide, the more specific and actionable the analysis will be.
+          </div>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileIn').click()">
+            <div class="upload-icon">📎</div>
+            <div class="upload-text">Drop files here or <span>browse</span></div>
+            <div class="upload-text" style="font-size:11px;margin-top:4px;">PDF · TXT · MD · PY · JSON · CSV · YAML — eval reports, model cards, architecture docs, code, data samples</div>
+          </div>
+          <input type="file" id="fileIn" multiple style="display:none" onchange="addFiles(this.files)" accept=".pdf,.txt,.md,.py,.js,.ts,.json,.csv,.yaml,.yml">
+          <div class="file-list" id="fileList"></div>
+        </div>
+
+        <!-- Summary card -->
+        <div class="card" id="summaryCard">
+          <div class="card-title">Review Summary — confirm before submitting</div>
+          <div id="summaryContent" style="font-size:13px;color:var(--slate);line-height:1.8;"></div>
+        </div>
+
+        <div class="step-nav">
+          <button class="btn btn-ghost" onclick="goStep(3)">← Back</button>
+          <button class="btn btn-primary" onclick="submitReview()" id="submitBtn" style="width:auto;margin-top:0;padding:14px 32px;font-size:14px;letter-spacing:1px;">
+            LAUNCH ADVERSARIAL PANEL →
+          </button>
+        </div>
+        <div style="text-align:center;font-size:11px;color:var(--ash);margin-top:8px;">Ctrl+Enter to submit · Takes 30–90 seconds · PDF memo emailed to you</div>
+      </div>
+    </div>
+
+    <!-- Results Page -->
+    <div class="page" id="pageResults">
+      <div id="resultsContent"></div>
+    </div>
+
+    <!-- History Page -->
+    <div class="page" id="pageHistory">
+      <div class="page-head">
+        <div class="page-title">Review History</div>
+        <div class="page-sub">All your Redboard decision memos, stored and downloadable.</div>
+      </div>
+      <div class="hist-grid" id="histGrid"></div>
+    </div>
+
+    <!-- Profile Page -->
+    <div class="page" id="pageProfile">
+      <div class="page-head">
+        <div class="page-title">My Profile</div>
+        <div class="page-sub">Manage your account. Password required to make changes.</div>
+      </div>
+      <div class="profile-header">
+        <div class="profile-avatar" id="profileAvatar">P</div>
+        <div>
+          <div class="profile-name" id="profileName">—</div>
+          <div class="profile-meta" id="profileMeta">—</div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num" id="statReviews">0</div><div class="stat-label">Reviews</div></div>
+        <div class="stat-card"><div class="stat-num" id="statMember">—</div><div class="stat-label">Member since</div></div>
+        <div class="stat-card"><div class="stat-num" id="statLogin">—</div><div class="stat-label">Last active</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Edit Profile</div>
+        <div id="profileErr" class="err-msg hidden"></div>
+        <div id="profileSuccess" class="success-msg hidden"></div>
+        <div class="fg-row">
+          <div class="fg"><label>Full Name</label><input type="text" id="pName"></div>
+          <div class="fg"><label>Company</label><input type="text" id="pCompany"></div>
+        </div>
+        <div class="fg"><label>Role</label><input type="text" id="pRole"></div>
+        <div class="fg"><label>Current Password (required to save)</label><input type="password" id="pCurrentPw" placeholder="Enter your password to confirm changes"></div>
+        <button class="btn btn-primary" onclick="saveProfile()" style="width:auto;margin-top:8px;">Save Changes</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Change Password</div>
+        <div id="pwErr" class="err-msg hidden"></div>
+        <div id="pwSuccess" class="success-msg hidden"></div>
+        <div class="fg"><label>Current Password</label><input type="password" id="pwCurrent"></div>
+        <div class="fg"><label>New Password</label><input type="password" id="pwNew" oninput="checkPasswordStrength(this.value,'pw2b1','pw2b2','pw2b3','pw2b4','pw2Label')"></div>
+        <div class="pw-strength"><div class="pw-bar" id="pw2b1"></div><div class="pw-bar" id="pw2b2"></div><div class="pw-bar" id="pw2b3"></div><div class="pw-bar" id="pw2b4"></div><span class="pw-label" id="pw2Label"></span></div>
+        <div class="fg" style="margin-top:12px"><label>Confirm New Password</label><input type="password" id="pwNewC"></div>
+        <button class="btn btn-primary" onclick="changePassword()" style="width:auto;margin-top:8px;">Update Password</button>
+      </div>
+    </div>
+
+    <!-- About Page -->
+    <div class="page" id="pageAbout">
+      <div class="about-hero">
+        <h1>What is <em style="color:var(--red);font-style:normal;">Redboard</em>?</h1>
+        <p>An adversarial AI review panel that forces your shipping decisions through structured, parallel expert scrutiny — before you ship.</p>
+      </div>
+      <div class="about-grid">
+        <div class="about-card">
+          <h3>🏛️ The Problem</h3>
+          <p>Investment committees, clinical trial boards, and supreme courts all use adversarial review by design. AI shipping decisions do not. Teams argue in Slack, someone senior wins, and the wrong call ships. Redboard is the fix.</p>
+        </div>
+        <div class="about-card">
+          <h3>⚔️ The Approach</h3>
+          <p>Five specialist agents attack your proposal in parallel — Safety, Business, Data Quality, Compliance, and Contrarian. A sixth synthesizes their findings into a verdict with minority dissent preserved.</p>
+        </div>
+        <div class="about-card">
+          <h3>📋 The Output</h3>
+          <p>A structured decision memo with verdict (SHIP / DO NOT SHIP / SHIP WITH CONDITIONS), confidence level, risk summary, key findings, conditions, and next steps. Ready for leadership in PDF.</p>
+        </div>
+        <div class="about-card">
+          <h3>🔒 The Security</h3>
+          <p>JWT authentication, bcrypt password hashing, security headers (CSP, HSTS, XSS protection), input sanitization, per-user data isolation, full audit logging, and consent management.</p>
+        </div>
+        <div class="about-card">
+          <h3>☁️ Built on Google Cloud</h3>
+          <p>Gemini 2.5 Flash for all agents, Google ADK for multi-agent orchestration, deployable on Cloud Run or GKE, with Vertex AI model access and Google Cloud credentials.</p>
+        </div>
+        <div class="about-card">
+          <h3>🎯 Who it's for</h3>
+          <p>AI/ML teams at companies deploying production AI features. Data scientists who need a structured pre-mortem. Engineering leaders who want an audit trail for AI decisions.</p>
+        </div>
+      </div>
+      <div style="margin-top:40px">
+        <div class="section-label">Technology stack</div>
+        <div class="tech-pills">
+          <span class="tech-pill">Google ADK 2.2</span>
+          <span class="tech-pill">Gemini 2.5 Flash</span>
+          <span class="tech-pill">FastAPI</span>
+          <span class="tech-pill">SQLAlchemy + SQLite</span>
+          <span class="tech-pill">JWT Auth</span>
+          <span class="tech-pill">ReportLab PDF</span>
+          <span class="tech-pill">Google Cloud Run</span>
+          <span class="tech-pill">Vertex AI</span>
+          <span class="tech-pill">Python 3.12</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Page -->
+    <div class="page" id="pageAdmin">
+      <div class="page-head">
+        <div class="page-title">Admin Panel</div>
+        <div class="page-sub">Manage users, reviews, and audit logs.</div>
+      </div>
+      <div class="admin-tabs">
+        <div class="admin-tab active" onclick="switchAdminTab('stats',this)">Overview</div>
+        <div class="admin-tab" onclick="switchAdminTab('users',this)">Users</div>
+        <div class="admin-tab" onclick="switchAdminTab('reviews',this)">Reviews</div>
+        <div class="admin-tab" onclick="switchAdminTab('audit',this)">Audit Log</div>
+      </div>
+
+      <div class="admin-panel active" id="adminStats"></div>
+      <div class="admin-panel" id="adminUsers"></div>
+      <div class="admin-panel" id="adminReviews"></div>
+      <div class="admin-panel" id="adminAudit"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+  <div class="loading-title">Panel in session</div>
+  <div class="loading-agents">
+    <div class="la on" id="la0"><div class="la-icon">🛡️</div><span class="la-label">Safety</span></div>
+    <div class="la on" id="la1"><div class="la-icon">💼</div><span class="la-label">Business</span></div>
+    <div class="la on" id="la2"><div class="la-icon">📊</div><span class="la-label">Data</span></div>
+    <div class="la on" id="la3"><div class="la-icon">⚖️</div><span class="la-label">Compliance</span></div>
+    <div class="la on" id="la4"><div class="la-icon">🔥</div><span class="la-label">Contrarian</span></div>
+  </div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  <div class="loading-sub">Agents deliberating in parallel…</div>
+</div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('rb_token');
+let me = JSON.parse(localStorage.getItem('rb_me') || 'null');
+let uploadedFiles = [];
+
+// ── Init ──────────────────────────────────────────────────────────────────
+window.onload = () => {
+  // Check for email verified redirect
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('verified') === '1') {
+    document.getElementById('verifiedBanner').classList.remove('hidden');
+    setTimeout(() => document.getElementById('verifiedBanner').classList.add('hidden'), 6000);
+    window.history.replaceState({}, '', '/');
+  }
+
+  if (token && me) {
+    // Re-fetch user from server to get latest verified status
+    fetch('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(freshMe => {
+        if (!freshMe) {
+          // Token invalid — clear and show landing
+          token = null; me = null;
+          localStorage.removeItem('rb_token'); localStorage.removeItem('rb_me');
+          showLanding();
+          return;
+        }
+        me = freshMe;
+        localStorage.setItem('rb_me', JSON.stringify(me));
+        if (!me.email_verified && !me.is_admin) {
+          showVerifyPending(me.email);
+        } else {
+          showApp();
+        }
+      })
+      .catch(() => showLanding());
+  } else {
+    showLanding();
+  }
+};
+
+// ── Navigation helpers ────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function showLanding() { show('landing'); hide('authScreen'); hide('appShell'); }
+function showAuth(tab='login') { hide('landing'); show('authScreen'); hide('appShell'); switchAuthTab(tab); }
+function showApp() {
+  hide('landing'); hide('authScreen'); show('appShell');
+  document.getElementById('sbName').textContent = me?.name || '—';
+  document.getElementById('sbRole').textContent = (me?.role || '') + (me?.company ? ' @ ' + me.company : '');
+  // Only show admin nav if user is actually admin
+  const adminNav = document.getElementById('navAdmin');
+  if (me?.is_admin === true) adminNav.classList.remove('hidden');
+  else adminNav.classList.add('hidden');
+  loadSidebarHistory();
+}
+
+function switchAuthTab(tab) {
+  ['loginForm','forgotForm','otpForm','registerForm'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  document.getElementById(tab==='login'?'loginForm':tab==='register'?'registerForm':tab==='forgot'?'forgotForm':'otpForm').classList.remove('hidden');
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login' || tab === 'forgot' || tab === 'otp');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  // Clear all error/success messages
+  document.querySelectorAll('.err-msg, .success-msg').forEach(el => { el.classList.add('hidden'); el.textContent=''; });
+  // Clear login fields when switching to login
+  if (tab === 'login') {
+    const lEmail = document.getElementById('lEmail'); if(lEmail) lEmail.value='';
+    const lPw = document.getElementById('lPw'); if(lPw) lPw.value='';
+  }
+  if (tab === 'register') {
+    ['rName','rPhone','rEmail','rCompany','rRole','rPw','rPwC'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    const cb = document.getElementById('consentCheck'); if(cb) cb.checked=false;
+    ['pwb1','pwb2','pwb3','pwb4'].forEach(id=>{ const el=document.getElementById(id); if(el) el.className='pw-bar'; });
+    const pl=document.getElementById('pwLabel'); if(pl) pl.textContent='';
+  }
+}
+function showForgot() { switchAuthTab('forgot'); }
+function showOTP() { switchAuthTab('otp'); }
+async function handleForgot() {
+  const email = document.getElementById('fEmail').value.trim();
+  const errEl = document.getElementById('forgotErr');
+  const succEl = document.getElementById('forgotSuccess');
+  const btn = document.getElementById('forgotBtn');
+  errEl.classList.add('hidden'); succEl.classList.add('hidden');
+  if (!email) { errEl.textContent='Enter your email'; errEl.classList.remove('hidden'); return; }
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div>';
+  try {
+    const r = await fetch(`${API}/auth/forgot-password`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const d = await r.json();
+    succEl.textContent = d.message || 'Reset code sent!'; succEl.classList.remove('hidden');
+    document.getElementById('otpEmail').value = email;
+    setTimeout(()=>switchAuthTab('otp'), 2000);
+  } catch(e) { errEl.textContent='Failed. Try again.'; errEl.classList.remove('hidden'); }
+  btn.disabled=false; btn.innerHTML='Send Reset Code';
+}
+async function handleOTP() {
+  const email = document.getElementById('otpEmail').value.trim();
+  const otp = document.getElementById('otpCode').value.trim();
+  const pw = document.getElementById('otpPw').value;
+  const pwc = document.getElementById('otpPwC').value;
+  const errEl = document.getElementById('otpErr');
+  const succEl = document.getElementById('otpSuccess');
+  const btn = document.getElementById('otpBtn');
+  errEl.classList.add('hidden'); succEl.classList.add('hidden');
+  if (!email||!otp||!pw||!pwc) { errEl.textContent='Fill all fields'; errEl.classList.remove('hidden'); return; }
+  if (pw!==pwc) { errEl.textContent='Passwords do not match'; errEl.classList.remove('hidden'); return; }
+  btn.disabled=true; btn.innerHTML='<div class="spinner"></div>';
+  try {
+    const r = await fetch(`${API}/auth/verify-otp`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,otp,new_password:pw})});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail);
+    succEl.textContent = 'Password reset! Signing you in...'; succEl.classList.remove('hidden');
+    setTimeout(()=>switchAuthTab('login'), 1800);
+  } catch(e) { errEl.textContent=e.message; errEl.classList.remove('hidden'); }
+  btn.disabled=false; btn.innerHTML='Reset Password';
+}
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+  const pg = document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1));
+  if (pg) pg.classList.add('active');
+  const nav = document.getElementById('nav' + p.charAt(0).toUpperCase() + p.slice(1));
+  if (nav) nav.classList.add('active');
+  if (p === 'history') loadHistoryPage();
+  if (p === 'profile') loadProfilePage();
+  if (p === 'admin') loadAdminPage();
+}
+
+function goTo(p) { if (token) showPage(p); else showAuth('login'); }
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function handleLogin() {
+  const email = document.getElementById('lEmail').value.trim();
+  const pw = document.getElementById('lPw').value;
+  const errEl = document.getElementById('loginErr');
+  const btn = document.getElementById('loginBtn');
+  errEl.classList.add('hidden');
+  if (!email || !pw) { errEl.textContent = 'Please fill all fields'; errEl.classList.remove('hidden'); return; }
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  const form = new FormData();
+  form.append('username', email); form.append('password', pw);
+  try {
+    const r = await fetch(`${API}/auth/login`, { method:'POST', body:form });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Login failed');
+    token = d.access_token; me = d.user;
+    localStorage.setItem('rb_token', token);
+    localStorage.setItem('rb_me', JSON.stringify(me));
+    showApp();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+    // If unverified, show resend option
+    if (e.message && e.message.includes('verify')) {
+      errEl.innerHTML = e.message + ' <a onclick="showVerifyPending(document.getElementById(\'lEmail\').value)" style="color:var(--red);cursor:pointer;text-decoration:underline;">Resend verification →</a>';
+    }
+  }
+  btn.disabled = false; btn.innerHTML = 'Sign In';
+}
+
+async function handleRegister() {
+  const name = document.getElementById('rName').value.trim();
+  const phoneCode = document.getElementById('rPhoneCode')?.value || '+91';
+  const phoneNum = document.getElementById('rPhone').value.trim();
+  const phone = phoneCode + phoneNum.replace(/[^0-9]/g,'');
+  const email = document.getElementById('rEmail').value.trim();
+  const company = document.getElementById('rCompany').value.trim();
+  const role = document.getElementById('rRole').value.trim();
+  const pw = document.getElementById('rPw').value;
+  const pwc = document.getElementById('rPwC').value;
+  const consent = document.getElementById('consentCheck').checked;
+  const errEl = document.getElementById('regErr');
+  const btn = document.getElementById('registerBtn');
+  errEl.classList.add('hidden');
+
+  if (!name||!phone||!email||!pw||!pwc) { errEl.textContent='Please fill all required fields'; errEl.classList.remove('hidden'); return; }
+  if (pw !== pwc) { errEl.textContent='Passwords do not match'; errEl.classList.remove('hidden'); return; }
+  if (!consent) { errEl.textContent='You must accept the data processing terms'; errEl.classList.remove('hidden'); return; }
+
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await fetch(`${API}/auth/register`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, phone, email, company, role, password:pw, consent })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Registration failed');
+    token = d.access_token; me = d.user;
+    localStorage.setItem('rb_token', token);
+    localStorage.setItem('rb_me', JSON.stringify(me));
+    // Show verification pending screen instead of app
+    if (d.message === 'verification_sent' || (me && !me.email_verified)) {
+      showVerifyPending(me.email);
+    } else {
+      showApp();
+    }
+  } catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+  btn.disabled = false; btn.innerHTML = 'Create Account';
+}
+
+function clearAndLogin() {
+  token = null; me = null;
+  localStorage.removeItem('rb_token'); localStorage.removeItem('rb_me');
+  showAuth('login');
+}
+
+function showVerifyPending(email) {
+  hide('landing'); hide('authScreen'); hide('appShell');
+  show('verifyScreen');
+  const el = document.getElementById('verifyEmailDisplay');
+  if (el && email) el.textContent = email;
+}
+
+async function resendVerification() {
+  const btn = document.getElementById('resendBtn');
+  const msg = document.getElementById('resendMsg');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  msg.classList.add('hidden');
+  try {
+    const r = await fetch(`${API}/auth/resend-verification`, {
+      method:'POST', headers:{Authorization:`Bearer ${token}`}
+    });
+    const d = await r.json();
+    msg.textContent = r.ok ? 'Verification email sent! Check your inbox.' : (d.detail || 'Failed');
+    msg.className = r.ok ? 'success-msg' : 'err-msg';
+    msg.classList.remove('hidden');
+  } catch(e) { msg.textContent='Failed to resend. Try again.'; msg.className='err-msg'; msg.classList.remove('hidden'); }
+  btn.disabled = false; btn.textContent = 'Resend verification email';
+}
+
+function handleLogout() {
+  token = null; me = null;
+  localStorage.removeItem('rb_token'); localStorage.removeItem('rb_me');
+  // Clear all forms
+  document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+  document.querySelectorAll('.err-msg, .success-msg').forEach(el => { el.classList.add('hidden'); el.textContent=''; });
+  showLanding();
+}
+
+// ── Password strength ─────────────────────────────────────────────────────
+function checkPasswordStrength(pw, b1='pwb1', b2='pwb2', b3='pwb3', b4='pwb4', lbl='pwLabel') {
+  let score = 0;
+  if (pw.length >= 10) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(pw)) score++;
+  const cls = score <= 1 ? 'weak' : score <= 2 ? 'weak' : score === 3 ? 'fair' : 'strong';
+  const labels = ['', 'Weak', 'Weak', 'Fair', 'Strong'];
+  for (let i=1;i<=4;i++) {
+    const el = document.getElementById(b1.replace('1', i.toString()));
+    if (el) el.className = 'pw-bar ' + (i <= score ? cls : '');
+  }
+  const lEl = document.getElementById(lbl);
+  if (lEl) lEl.textContent = pw.length > 0 ? labels[score] : '';
+}
+
+// ── Character count ───────────────────────────────────────────────────────
+function cc(el, countId) { document.getElementById(countId).textContent = el.value.length; }
+
+// ── File upload ───────────────────────────────────────────────────────────
+// Full report upload zone
+const uzFull = document.getElementById('uploadZoneFull');
+if (uzFull) {
+  uzFull.addEventListener('dragover', e => { e.preventDefault(); uzFull.classList.add('drag'); });
+  uzFull.addEventListener('dragleave', () => uzFull.classList.remove('drag'));
+  uzFull.addEventListener('drop', e => { e.preventDefault(); uzFull.classList.remove('drag'); handleFullReport(e.dataTransfer.files); });
+}
+let fullReportFile = null;
+function handleFullReport(files) {
+  if (!files || !files[0]) return;
+  fullReportFile = files[0];
+  document.getElementById('fullReportName').textContent = `📄 ${files[0].name} (${(files[0].size/1024).toFixed(1)} KB)`;
+  document.getElementById('fullReportFile').style.display = 'block';
+}
+function clearFullReport() {
+  fullReportFile = null;
+  document.getElementById('fullReportFile').style.display = 'none';
+  document.getElementById('fileInFull').value = '';
+}
+async function submitFullReport() {
+  if (!fullReportFile) return;
+  document.getElementById('loadingOverlay').classList.add('on');
+  const form = new FormData();
+  const projName = document.getElementById('projectName')?.value?.trim() || fullReportFile.name.replace(/\.[^.]+$/,'');
+  form.append('project_name', projName);
+  form.append('proposal', `Full project brief uploaded: ${fullReportFile.name}. Please extract and review the complete proposal from the attached document.`);
+  form.append('context', 'Full project document uploaded. All context, technical details, evaluation metrics, risks, and stakeholder information are in the attached file. Please read it completely and use it as the primary source for your adversarial review.');
+  form.append('team', ''); form.append('objectives', ''); form.append('risks_known', '');
+  form.append('timeline', ''); form.append('stakeholders', ''); form.append('tech_stack', '');
+  form.append('files', fullReportFile);
+  try {
+    const r = await fetch(`${API}/review`, { method:'POST', headers:{Authorization:`Bearer ${token}`}, body:form });
+    if (r.status === 401) { handleLogout(); return; }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Review failed');
+    document.getElementById('loadingOverlay').classList.remove('on');
+    renderResults(d, fullReportFile.name);
+    clearFullReport(); loadSidebarHistory();
+    if(me) { me.review_count=(me.review_count||0)+1; localStorage.setItem('rb_me',JSON.stringify(me)); }
+  } catch(e) {
+    document.getElementById('loadingOverlay').classList.remove('on');
+    alert('Error: '+e.message);
+  }
+}
+
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('drag'));
+uz.addEventListener('drop', e => { e.preventDefault(); uz.classList.remove('drag'); addFiles(e.dataTransfer.files); });
+
+function addFiles(files) {
+  for (const f of files) {
+    if (!uploadedFiles.find(x => x.name === f.name)) uploadedFiles.push(f);
+  }
+  renderFiles();
+}
+function removeFile(i) { uploadedFiles.splice(i,1); renderFiles(); }
+function renderFiles() {
+  const el = document.getElementById('fileList');
+  el.innerHTML = uploadedFiles.map((f,i) => `
+    <div class="file-item">
+      <span class="file-name">📄 ${f.name} <span style="color:var(--ash)">(${(f.size/1024).toFixed(1)}KB)</span></span>
+      <span class="file-rm" onclick="removeFile(${i})">×</span>
+    </div>`).join('');
+}
+
+// ── Submit review ─────────────────────────────────────────────────────────
+function goStep(n) {
+  // Validate current step before advancing
+  const current = document.querySelector('.review-step.active');
+  const currentNum = parseInt(current?.id?.replace('step','') || '1');
+
+  if (n > currentNum) {
+    // Validate required fields for current step
+    if (currentNum === 1) {
+      const projName = document.getElementById('projectName')?.value?.trim();
+      const proposal = document.getElementById('proposal').value.trim();
+      const context = document.getElementById('context').value.trim();
+      if (!projName) { alert('Please enter a Project Name before continuing.'); return; }
+      if (!proposal) { alert('Please fill in the Proposal field before continuing.'); return; }
+      if (!context) { alert('Please fill in the Context & Technical Details field before continuing.'); return; }
+    }
+  }
+
+  // Update step dots
+  for (let i=1; i<=4; i++) {
+    const dot = document.getElementById('sd'+i);
+    const line = document.getElementById('sl'+i);
+    dot.classList.remove('active','done');
+    if (line) line.classList.remove('done');
+    if (i < n) { dot.classList.add('done'); if(line) line.classList.add('done'); }
+    if (i === n) dot.classList.add('active');
+  }
+
+  // Show correct step
+  document.querySelectorAll('.review-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+
+  // If going to step 4, build summary
+  if (n === 4) buildSummary();
+
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function buildSummary() {
+  const fields = [
+    ['Project Name', document.getElementById('projectName')?.value],
+    ['Proposal', document.getElementById('proposal')?.value],
+    ['Team', document.getElementById('team')?.value],
+    ['Timeline', document.getElementById('timeline')?.value],
+    ['User Base', document.getElementById('userbase')?.value],
+    ['Domain', document.getElementById('domain')?.value],
+    ['Geographies', document.getElementById('geographies')?.value],
+    ['Tech Stack', document.getElementById('techStack')?.value],
+    ['Data Sensitivity', document.getElementById('dataSensitivity')?.value],
+    ['Regulatory', document.getElementById('regulatory')?.value],
+    ['Human Oversight', document.getElementById('humanOversight')?.value],
+    ['Files', uploadedFiles.length > 0 ? uploadedFiles.map(f=>f.name).join(', ') : 'None'],
+  ];
+  const el = document.getElementById('summaryContent');
+  if (!el) return;
+  el.innerHTML = fields.filter(([k,v])=>v&&v.trim()).map(([k,v])=>`
+    <div style="display:flex;gap:12px;padding:6px 0;border-bottom:1px solid var(--line2);">
+      <span style="min-width:140px;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--ash);flex-shrink:0;">${k}</span>
+      <span style="font-size:13px;color:var(--mist);">${v.length>120?v.substring(0,120)+'…':v}</span>
+    </div>`).join('');
+}
+
+async function submitReview() {
+  const proposal = document.getElementById('proposal').value.trim();
+  const context = document.getElementById('context').value.trim();
+  if (!proposal || !context) { alert('Proposal and Context are required.'); return; }
+
+  document.getElementById('loadingOverlay').classList.add('on');
+
+  const form = new FormData();
+  form.append('project_name', document.getElementById('projectName')?.value?.trim() || 'Untitled Project');
+  form.append('proposal', proposal);
+  form.append('context', context);
+  form.append('team', document.getElementById('team')?.value || '');
+  form.append('objectives', document.getElementById('objectives')?.value || '');
+  form.append('risks_known', (document.getElementById('risksKnown')?.value || '') + 
+    '\nRegulatory context: ' + (document.getElementById('regulatory')?.value || 'Not specified') +
+    '\nData sensitivity: ' + (document.getElementById('dataSensitivity')?.value || 'Not specified') +
+    '\nHuman oversight: ' + (document.getElementById('humanOversight')?.value || 'Not specified') +
+    '\nRollback plan: ' + (document.getElementById('rollbackPlan')?.value || 'Not specified') +
+    '\nSuccess metrics: ' + (document.getElementById('successMetrics')?.value || 'Not specified'));
+  form.append('timeline', document.getElementById('timeline')?.value || '');
+  form.append('stakeholders', (document.getElementById('stakeholders')?.value || '') +
+    '\nUser base: ' + (document.getElementById('userbase')?.value || 'Not specified') +
+    '\nUser type: ' + (document.getElementById('usertype')?.value || 'Not specified') +
+    '\nDomain: ' + (document.getElementById('domain')?.value || 'Not specified') +
+    '\nGeographies: ' + (document.getElementById('geographies')?.value || 'Not specified'));
+  form.append('tech_stack', document.getElementById('techStack')?.value || '');
+  uploadedFiles.forEach(f => form.append('files', f));
+
+  try {
+    const r = await fetch(`${API}/review`, {
+      method:'POST', headers:{'Authorization':`Bearer ${token}`}, body:form
+    });
+    if (r.status === 401) { handleLogout(); return; }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Review failed');
+    document.getElementById('loadingOverlay').classList.remove('on');
+    renderResults(d, proposal);
+    // Reset
+    ['projectName','proposal','context','team','timeline','objectives','risksKnown','stakeholders','techStack',
+     'userbase','domain','geographies','usertype','regulatory','humanOversight','rollbackPlan','successMetrics'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    // Reset char counts
+    ['ccProposal','ccContext','ccObj'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='0'; });
+    // Go back to step 1
+    goStep(1);
+    uploadedFiles=[]; renderFiles();
+    loadSidebarHistory();
+    if(me) { me.review_count = (me.review_count||0)+1; localStorage.setItem('rb_me',JSON.stringify(me)); }
+  } catch(e) {
+    document.getElementById('loadingOverlay').classList.remove('on');
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── Render results ────────────────────────────────────────────────────────
+function extractLine(text, key) {
+  for (const l of text.split('\n')) { if (l.includes(key+':')) return l.replace(key+':','').trim(); }
+  return '';
+}
+function extractSection(text, key) {
+  const lines = text.split('\n'); const items=[]; let in_=false;
+  for (const l of lines) {
+    if (l.includes(key+':')) { in_=true; continue; }
+    if (in_) {
+      if (/^\d+\.\s/.test(l.trim())) items.push(l.trim().replace(/^\d+\.\s/,''));
+      else if (l.trim().startsWith('- ')) items.push(l.trim().slice(2));
+      else if (l.trim() && !l.trim().startsWith('-') && !l.trim().match(/^\d/) && items.length>0) in_=false;
+    }
+  }
+  return items;
+}
+function extractRisks(text) {
+  const lines = text.split('\n'); const items=[]; let in_=false;
+  for (const l of lines) {
+    if (l.includes('RISK SUMMARY:')) { in_=true; continue; }
+    if (in_) {
+      if (l.trim().startsWith('- ')) items.push(l.trim().slice(2));
+      else if (l.trim() && !l.trim().startsWith('-') && items.length>0) break;
+    }
+  }
+  return items;
+}
+function extractDissent(text) {
+  const lines=text.split('\n'); let in_=false; const c=[];
+  for (const l of lines) {
+    if (l.includes('MINORITY DISSENT:')) { in_=true; continue; }
+    if (in_) {
+      if (l.includes('RECOMMENDED NEXT') || l.includes('MEMO GENERATED')) break;
+      if (l.trim()) c.push(l.trim());
+    }
+  }
+  return c.join(' ');
+}
+function extractNextSteps(text) {
+  const lines=text.split('\n'); const items=[]; let in_=false;
+  for (const l of lines) {
+    if (l.includes('RECOMMENDED NEXT STEPS:')) { in_=true; continue; }
+    if (in_) {
+      if (/^\d+\.\s/.test(l.trim())) items.push(l.trim().replace(/^\d+\.\s/,''));
+      else if (l.trim() && !l.trim().match(/^\d/) && items.length>0) break;
+    }
+  }
+  return items;
+}
+function getRiskLevel(text) {
+  for (const lv of ['CRITICAL','HIGH','MEDIUM','LOW']) { if (text.toUpperCase().includes(lv)) return lv; }
+  return 'UNKNOWN';
+}
+function verdictClass(v) {
+  if (!v) return 'noship';
+  if (v.includes('DO NOT')) return 'noship';
+  if (v.includes('CONDITIONS')) return 'cond';
+  if (v.includes('SHIP')) return 'ship';
+  return 'noship';
+}
+
+function renderResults(data, proposal) {
+  const s = data.synthesis;
+  const ao = data.agent_outputs;
+  const rid = data.review_id || data.id || '';  // capture review_id safely
+  const verdict = data.verdict || extractLine(s,'PANEL VERDICT');
+  const conf = data.confidence || extractLine(s,'CONFIDENCE');
+  const score = extractLine(s,'OVERALL RISK SCORE');
+  const risks = extractRisks(s);
+  const findings = extractSection(s,'KEY FINDINGS');
+  const conditions = extractSection(s,'CONDITIONS TO SHIP');
+  const dissent = extractDissent(s);
+  const nextSteps = extractNextSteps(s);
+  const vc = verdictClass(verdict);
+  const confClass = conf.toLowerCase().split('/')[0].trim();
+
+  const agentMeta = {
+    safety:['🛡️','Safety Agent'],
+    business:['💼','Business Agent'],
+    data:['📊','Data Quality'],
+    compliance:['⚖️','Compliance'],
+    contrarian:['🔥','Contrarian'],
+  };
+
+  const risksHTML = risks.length ? `
+    <div class="risk-grid" style="margin-bottom:20px">
+      ${risks.map(r=>{
+        const parts=r.split('—'); const agent=(parts[0]||'').replace('Agent:','').trim(); const detail=(parts.slice(1).join('—')||'').trim()||r;
+        const lv=getRiskLevel(r);
+        return `<div class="risk-cell">
+          <div class="risk-agent">${agent}</div>
+          <span class="risk-badge ${lv}">${lv}</span>
+          <div class="risk-detail">${detail}</div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  const findingsHTML = findings.length ? `
+    <div class="csec"><div class="csec-head" onclick="toggleSec(this)"><span class="csec-title">Key Findings</span><span class="csec-chev open">▾</span></div>
+    <div class="csec-body open">
+      ${findings.map((f,i)=>`<div class="finding"><div class="find-num">${i+1}</div><div class="find-text">${f}</div></div>`).join('')}
+    </div></div>` : '';
+
+  const condHTML = conditions.length ? `
+    <div class="csec"><div class="csec-head" onclick="toggleSec(this)"><span class="csec-title">Conditions to Ship</span><span class="csec-chev open">▾</span></div>
+    <div class="csec-body open">
+      ${conditions.map(c=>`<div class="finding"><div class="find-num" style="color:var(--warn);font-size:16px">✓</div><div class="find-text">${c}</div></div>`).join('')}
+    </div></div>` : '';
+
+  const dissentHTML = dissent ? `
+    <div class="csec"><div class="csec-head" onclick="toggleSec(this)"><span class="csec-title">Minority Dissent</span><span class="csec-chev open">▾</span></div>
+    <div class="csec-body open">
+      <div style="background:rgba(155,28,28,.1);border-left:3px solid var(--red);padding:14px 16px;font-size:13px;line-height:1.6">${dissent}</div>
+    </div></div>` : '';
+
+  const nextHTML = nextSteps.length ? `
+    <div class="csec"><div class="csec-head" onclick="toggleSec(this)"><span class="csec-title">Recommended Next Steps</span><span class="csec-chev open">▾</span></div>
+    <div class="csec-body open">
+      ${nextSteps.map((s,i)=>`<div class="finding"><div class="find-num">${i+1}</div><div class="find-text">${s}</div></div>`).join('')}
+    </div></div>` : '';
+
+  const keys = Object.keys(ao);
+  const tabsHTML = keys.map((k,i)=>{
+    const [icon,label]=agentMeta[k]||['🤖',k];
+    return `<div class="agent-tab ${i===0?'active':''}" onclick="switchAgentTab('${k}',this)">${icon} ${label}</div>`;
+  }).join('');
+  const outsHTML = keys.map((k,i)=>`<div class="agent-out ${i===0?'active':''}" id="ao-${k}">${ao[k]||''}</div>`).join('');
+
+  document.getElementById('resultsContent').innerHTML = `
+    <div class="verdict-hero ${vc} fade-in">
+      <div class="v-label">Panel Verdict</div>
+      <div class="v-text ${vc}">${verdict||'UNKNOWN'}</div>
+      <div class="v-meta">
+        <div class="v-conf"><div class="conf-dot ${confClass}"></div>${conf} Confidence</div>
+        ${score ? `<div class="v-score">Risk Score: ${score}</div>` : ''}
+      </div>
+      <div class="v-actions">
+        <button class="dl-btn" onclick="downloadPDF('${rid}')">↓ PDF Memo</button>
+        <button class="outline-btn" onclick="showPage('review')">+ New Review</button>
+      </div>
+    </div>
+    <div style="padding:0 0 40px">
+      <div style="font-size:12px;color:var(--ash);margin-bottom:16px;letter-spacing:.5px">PROPOSAL: <span style="color:var(--slate)">${proposal.substring(0,100)}${proposal.length>100?'…':''}</span></div>
+      ${risksHTML}${findingsHTML}${condHTML}${dissentHTML}${nextHTML}
+      <div class="csec"><div class="csec-head" onclick="toggleSec(this)"><span class="csec-title">Agent Reports</span><span class="csec-chev open">▾</span></div>
+        <div class="csec-body open" style="padding:0">
+          <div class="agent-tabs">${tabsHTML}</div>${outsHTML}
+        </div>
+      </div>
+    </div>`;
+
+  showPage('results');
+}
+
+function switchAgentTab(key,el) {
+  document.querySelectorAll('.agent-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.agent-out').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  const out=document.getElementById('ao-'+key);
+  if(out) out.classList.add('active');
+}
+function toggleSec(head) {
+  const body=head.nextElementSibling;
+  const chev=head.querySelector('.csec-chev');
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+async function downloadPDF(rid) {
+  try {
+    const r=await fetch(`${API}/review/${rid}/pdf`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok) throw new Error('Not found');
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`redboard-${rid.substring(0,8)}.pdf`; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('PDF download failed: '+e.message); }
+}
+
+// ── History ───────────────────────────────────────────────────────────────
+function badgeClass(v) {
+  if(!v) return 'unk';
+  if(v.includes('DO NOT')) return 'noship';
+  if(v.includes('CONDITIONS')) return 'cond';
+  if(v.includes('SHIP')) return 'ship';
+  return 'unk';
+}
+
+async function loadSidebarHistory() {
+  try {
+    const r=await fetch(`${API}/reviews`,{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok) return;
+    const reviews=await r.json();
+    const el=document.getElementById('sbHistory');
+    if(!reviews.length){el.innerHTML='<div style="padding:8px 16px;font-size:11px;color:var(--ash)">No reviews yet</div>';return;}
+    el.innerHTML=reviews.slice(0,6).map(rv=>`
+      <div class="sb-hist-item" onclick="loadReview('${rv.id}')">
+        <div class="sb-hist-proposal">${rv.proposal}</div>
+        <div class="sb-hist-meta">
+          <span class="vbadge ${badgeClass(rv.verdict)}">${rv.verdict||'—'}</span>
+          <span class="sb-hist-date">${rv.created_at?new Date(rv.created_at).toLocaleDateString():''}</span>
+        </div>
+      </div>`).join('');
+  } catch(e){}
+}
+
+async function loadHistoryPage() {
+  const el=document.getElementById('histGrid');
+  el.innerHTML='<div style="color:var(--ash);font-size:13px;padding:20px 0">Loading...</div>';
+  try {
+    const r=await fetch(`${API}/reviews`,{headers:{Authorization:`Bearer ${token}`}});
+    const reviews=await r.json();
+    if(!reviews.length){
+      el.innerHTML=`<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No reviews yet</div><p>Create your first adversarial review.</p></div>`;
+      return;
+    }
+    el.innerHTML=reviews.map(rv=>{
+      const bc=badgeClass(rv.verdict);
+      const dt=rv.created_at?new Date(rv.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+      return `<div class="hist-card" onclick="loadReview('${rv.id}')">
+        <div class="hc-left">
+          <div class="hc-proposal">${rv.proposal}</div>
+          <div class="hc-meta">
+            <span class="vbadge ${bc}">${rv.verdict||'UNKNOWN'}</span>
+            <span>${dt}</span>
+            ${rv.file_count>0?`<span>📎 ${rv.file_count} file${rv.file_count>1?'s':''}</span>`:''}
+          </div>
+        </div>
+        <div class="hc-right">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();downloadPDF('${rv.id}')">↓ PDF</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){el.innerHTML='<div style="color:var(--ash)">Failed to load.</div>';}
+}
+
+async function loadReview(id) {
+  try {
+    const r=await fetch(`${API}/reviews/${id}`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail);
+    renderResults(d, d.proposal);
+  } catch(e){alert('Failed to load review: '+e.message);}
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────
+async function loadProfilePage() {
+  if(!me) return;
+  document.getElementById('profileAvatar').textContent = (me.name||'?')[0].toUpperCase();
+  document.getElementById('profileName').textContent = me.name;
+  document.getElementById('profileMeta').textContent = [me.role, me.company].filter(Boolean).join(' @ ') || me.email;
+  document.getElementById('statReviews').textContent = me.review_count||0;
+  document.getElementById('statMember').textContent = me.created_at ? new Date(me.created_at).toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '—';
+  document.getElementById('statLogin').textContent = me.last_login ? new Date(me.last_login).toLocaleDateString() : 'Now';
+  document.getElementById('pName').value = me.name||'';
+  document.getElementById('pCompany').value = me.company||'';
+  document.getElementById('pRole').value = me.role||'';
+}
+
+async function saveProfile() {
+  const errEl=document.getElementById('profileErr');
+  const succEl=document.getElementById('profileSuccess');
+  errEl.classList.add('hidden'); succEl.classList.add('hidden');
+  try {
+    const r=await fetch(`${API}/auth/profile`,{
+      method:'PUT', headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+      body:JSON.stringify({name:document.getElementById('pName').value,company:document.getElementById('pCompany').value,role:document.getElementById('pRole').value,current_password:document.getElementById('pCurrentPw').value})
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail);
+    me={...me,...d}; localStorage.setItem('rb_me',JSON.stringify(me));
+    document.getElementById('sbName').textContent=me.name;
+    succEl.textContent='Profile updated successfully!'; succEl.classList.remove('hidden');
+  } catch(e){errEl.textContent=e.message;errEl.classList.remove('hidden');}
+}
+
+async function changePassword() {
+  const errEl=document.getElementById('pwErr');
+  const succEl=document.getElementById('pwSuccess');
+  errEl.classList.add('hidden'); succEl.classList.add('hidden');
+  const newPw=document.getElementById('pwNew').value;
+  const newPwC=document.getElementById('pwNewC').value;
+  if(newPw!==newPwC){errEl.textContent='Passwords do not match';errEl.classList.remove('hidden');return;}
+  try {
+    const r=await fetch(`${API}/auth/password`,{
+      method:'PUT', headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+      body:JSON.stringify({current_password:document.getElementById('pwCurrent').value,new_password:newPw})
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail);
+    succEl.textContent='Password updated! Please sign in again.'; succEl.classList.remove('hidden');
+    setTimeout(handleLogout,2000);
+  } catch(e){errEl.textContent=e.message;errEl.classList.remove('hidden');}
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────
+async function loadAdminPage() {
+  switchAdminTab('stats', document.querySelector('.admin-tab'));
+}
+
+function switchAdminTab(tab, el) {
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('admin'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  if(tab==='stats') loadAdminStats();
+  if(tab==='users') loadAdminUsers();
+  if(tab==='reviews') loadAdminReviews();
+  if(tab==='audit') loadAdminAudit();
+}
+
+async function adminFetch(path) {
+  const r=await fetch(`${API}${path}`,{headers:{Authorization:`Bearer ${token}`}});
+  return r.json();
+}
+
+async function loadAdminStats() {
+  const el=document.getElementById('adminStats');
+  try {
+    const d=await adminFetch('/admin/stats');
+    const vd=d.verdict_breakdown||{};
+    el.innerHTML=`
+      <div class="admin-stat-grid">
+        <div class="admin-stat"><div class="admin-stat-n">${d.total_users||0}</div><div class="admin-stat-l">Total Users</div></div>
+        <div class="admin-stat"><div class="admin-stat-n">${d.active_users||0}</div><div class="admin-stat-l">Active Users</div></div>
+        <div class="admin-stat"><div class="admin-stat-n">${d.total_reviews||0}</div><div class="admin-stat-l">Total Reviews</div></div>
+        <div class="admin-stat"><div class="admin-stat-n" style="font-size:18px">${Object.entries(vd).map(([k,v])=>`${v} ${k}`).join('<br>')}</div><div class="admin-stat-l">Verdict breakdown</div></div>
+      </div>`;
+  } catch(e){el.innerHTML='<div style="color:var(--ash)">Failed to load stats.</div>';}
+}
+
+async function loadAdminUsers() {
+  const el=document.getElementById('adminUsers');
+  try {
+    const users=await adminFetch('/admin/users');
+    el.innerHTML=`<table class="data-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Reviews</th><th>Status</th><th>Admin</th><th>Actions</th></tr></thead>
+      <tbody>${users.map(u=>`
+        <tr>
+          <td>${u.name}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px">${u.email}</td>
+          <td>${u.company||'—'}</td>
+          <td>${u.review_count||0}</td>
+          <td><span class="${(u.is_active==true||u.is_active===1)?'badge-active':'badge-inactive'}">${u.is_active==true||u.is_active===1?'Active':'Suspended'}</span></td>
+          <td>${u.is_admin?'<span class="badge-admin">Admin</span>':'—'}</td>
+          <td style="display:flex;gap:6px">
+            ${!u.is_admin?`<button class="btn btn-sm btn-ghost" onclick="adminToggleUser('${u.id}')">${(u.is_active==true||u.is_active===1)?'Suspend':'Activate'}</button>
+            <button class="btn btn-sm btn-ghost" onclick="adminMakeAdmin('${u.id}')">Make Admin</button>`:'—'}
+          </td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e){el.innerHTML='<div style="color:var(--ash)">Failed to load users.</div>';}
+}
+
+async function adminToggleUser(uid) {
+  await fetch(`${API}/admin/users/${uid}/toggle`,{method:'PUT',headers:{Authorization:`Bearer ${token}`}});
+  loadAdminUsers();
+}
+async function adminMakeAdmin(uid) {
+  if(!confirm('Make this user an admin? This cannot be undone easily.')) return;
+  await fetch(`${API}/admin/users/${uid}/make-admin`,{method:'PUT',headers:{Authorization:`Bearer ${token}`}});
+  loadAdminUsers();
+}
+
+async function loadAdminReviews() {
+  const el=document.getElementById('adminReviews');
+  try {
+    const reviews=await adminFetch('/admin/reviews');
+    el.innerHTML=`<table class="data-table">
+      <thead><tr><th>Proposal</th><th>Verdict</th><th>Date</th></tr></thead>
+      <tbody>${reviews.map(r=>`
+        <tr>
+          <td>${r.proposal}</td>
+          <td><span class="vbadge ${badgeClass(r.verdict)}">${r.verdict||'—'}</span></td>
+          <td style="font-size:11px;font-family:'DM Mono',monospace">${r.created_at?new Date(r.created_at).toLocaleDateString():''}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e){el.innerHTML='<div style="color:var(--ash)">Failed.</div>';}
+}
+
+async function loadAdminAudit() {
+  const el=document.getElementById('adminAudit');
+  try {
+    const logs=await adminFetch('/admin/audit');
+    el.innerHTML=`<table class="data-table">
+      <thead><tr><th>Action</th><th>Detail</th><th>IP</th><th>Time</th></tr></thead>
+      <tbody>${logs.map(l=>`
+        <tr>
+          <td style="font-family:'DM Mono',monospace;font-size:11px">${l.action}</td>
+          <td style="font-size:11px;color:var(--ash)">${l.detail||'—'}</td>
+          <td style="font-size:11px;font-family:'DM Mono',monospace">${l.ip||'—'}</td>
+          <td style="font-size:11px">${l.created_at?new Date(l.created_at).toLocaleString():''}</td>
+        </tr>`).join('')}
+      </tbody></table>`;
+  } catch(e){el.innerHTML='<div style="color:var(--ash)">Failed.</div>';}
+}
+
+function fillSample() {
+  document.getElementById('proposal').value = 'Deploy a multi-tenant AI-powered claims processing assistant for our enterprise insurance platform. The system will automatically triage incoming insurance claims, extract key information from uploaded documents (PDFs, images, medical reports), assess claim validity using our proprietary rule engine, and recommend approval, rejection, or manual review to human adjusters. It will serve 50,000 monthly active enterprise users across 12 insurance companies.';
+  document.getElementById('context').value = 'Architecture: LLM-based document extraction (GPT-4o) + rule-based validation engine + human-in-the-loop dashboard. Training data: 2.3M historical claims from 2019-2024 (US market only). Evaluation: 91.2% accuracy on 5,000 held-out claims, 94% precision on approvals, 88% recall on fraud detection. False positive rate: 6%. Deployment: Multi-tenant SaaS on AWS. Each tenant gets isolated data store. PII handling: Claims contain SSNs, medical records, bank details. We use field-level encryption. No HIPAA BAA in place yet. Current test coverage: English-only, US regulatory framework, standard auto and home claims. No testing on health insurance, life insurance, or non-US jurisdictions yet.';
+  document.getElementById('team').value = 'AI Platform Team: 3 ML engineers, 1 data engineer, 2 backend engineers, 1 PM. No dedicated compliance or legal review done yet.';
+  document.getElementById('objectives').value = 'Reduce average claim processing time from 8 days to under 24 hours. Cut operational costs by 35%. Achieve 95% adjuster satisfaction score. Process 10,000 claims/day at launch, scaling to 100,000 within 6 months.';
+  document.getElementById('risksKnown').value = 'Model may struggle with unusual or complex claims. We plan to route low-confidence predictions to manual review. Some edge cases in fraud detection may be missed. We have not tested with non-English documents.';
+  document.getElementById('timeline').value = 'Soft launch in 3 weeks to 2 enterprise clients (10,000 claims/month total). Full rollout in 6 weeks across all 12 clients.';
+  document.getElementById('stakeholders').value = 'Enterprise insurance company clients (12 firms), 500 human adjusters who will use the dashboard, end consumers whose claims are processed, state insurance regulators (CA, NY, TX). Internal: Legal, Compliance, Sales.';
+  document.getElementById('techStack').value = 'GPT-4o (Azure OpenAI), LangChain, PostgreSQL, Redis, FastAPI, React, AWS ECS, S3 for document storage, Textract for OCR, internal rule engine v2.1';
+  // Update char counts
+  ['proposal','context'].forEach(id => { const el=document.getElementById(id); const cc=document.getElementById('cc'+id.charAt(0).toUpperCase()+id.slice(1)); if(cc) cc.textContent=el.value.length; });
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key==='Enter' && document.getElementById('pageReview').classList.contains('active')) submitReview();
+});
+</script>
+</body>
+</html>

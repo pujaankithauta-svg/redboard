@@ -1,0 +1,61 @@
+REDBOARD — SAMPLE INPUT FILES
+==============================
+
+These three files simulate a real company submitting a decision brief for adversarial review.
+The scenario: Ogha Inc is about to launch an AI claims processing system for 12 insurance companies.
+
+HOW TO USE
+----------
+
+Step 1 — Open Redboard at http://localhost:8000 and sign in.
+
+Step 2 — Click "New Review" in the sidebar.
+
+Step 3 — STEP 1 (The Proposal):
+  Open sample_brief.txt and copy-paste each section into the corresponding form field:
+  - PROPOSAL section → Proposal field
+  - CONTEXT AND TECHNICAL DETAILS section → Context field
+  - OBJECTIVES section → Objectives field
+
+Step 4 — STEP 2 (Company Context):
+  From sample_brief.txt:
+  - TEAM section → Team field
+  - TIMELINE section → Timeline field
+  - "50,000 monthly active users across 12 enterprise clients" → User Base
+  - "Insurance — auto, homeowner" → Domain
+  - "US market" → Geographies
+  - "Enterprise insurance companies (B2B)" → User Type
+  - TECH STACK section → Tech Stack field
+  - STAKEHOLDERS section → Stakeholders field
+
+Step 5 — STEP 3 (Risk & Team):
+  From sample_brief.txt:
+  - KNOWN RISKS section → Known Risks field
+  - REGULATORY ENVIRONMENT section → Regulatory field
+  - "Highly Sensitive — financial/medical/legal data" → Data Sensitivity
+  - HUMAN OVERSIGHT PLAN section → Human Oversight field
+  - ROLLBACK PLAN section → Rollback Plan field
+  - SUCCESS METRICS section → Success Metrics field
+
+Step 6 — STEP 4 (Documents):
+  Upload BOTH of these files:
+  - eval_report.csv (the model evaluation results)
+  - architecture_risks.txt (the engineering concerns document)
+  
+  These files contain critical information the agents WILL find and cite.
+
+Step 7 — Click "LAUNCH ADVERSARIAL PANEL"
+
+WHAT TO EXPECT
+--------------
+The panel will take 30-90 seconds. It will produce a detailed memo that should:
+- Catch the GPT-4o prompt injection risk (from architecture_risks.txt)
+- Flag the Azure OpenAI HIPAA/GDPR data processing issue
+- Challenge the 91.2% accuracy claim given the biased test set
+- Flag the auto-approval path with no secondary review
+- Question the July 15 deadline pressure
+- Identify the EU AI Act High-Risk classification concern
+- Cite specific numbers from the eval report (4.8% false approval rate, 144 incorrect approvals/day)
+- Reference the four unresolved rule engine conflicts (RUL-441, RUL-502, RUL-518, RUL-601)
+
+A PDF memo will be emailed to you and available to download.

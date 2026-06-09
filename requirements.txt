@@ -1,8 +1,12 @@
-google-adk>=0.3.0
+google-adk>=2.0.0
 google-cloud-aiplatform>=1.87.0
-litellm>=1.40.0
 fastapi>=0.111.0
 uvicorn>=0.29.0
 python-dotenv>=1.0.0
 reportlab>=4.0.0
 pydantic>=2.0.0
+sqlalchemy>=2.0.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.9
+aiofiles>=23.0.0

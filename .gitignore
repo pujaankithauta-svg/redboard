@@ -1,4 +1,8 @@
 .env
 __pycache__/
 *.pyc
+*.db
+uploads/
 outputs/
+*.pdf
+.DS_Store

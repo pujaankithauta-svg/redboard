@@ -1,0 +1,186 @@
+REDBOARD DECISION BRIEF — AI CLAIMS PROCESSING ASSISTANT
+=========================================================
+Project: ClaimsIQ v1.0
+Date: June 2026
+Submitted by: ML Platform Team, Ogha Inc
+
+
+PROPOSAL
+--------
+Deploy a multi-tenant AI-powered insurance claims processing assistant to production.
+
+The system automatically triages incoming insurance claims submitted via API and web portal,
+extracts structured information from uploaded documents (PDFs, TIFF images, medical reports,
+police reports, contractor quotes), assesses claim validity against our proprietary rule engine,
+and recommends one of three dispositions to human adjusters: APPROVE, REJECT, or ESCALATE.
+
+Scope: 50,000 monthly active users across 12 enterprise insurance company clients.
+Volume: Target 10,000 claims/day at launch, scaling to 100,000 within 6 months.
+Decision weight: AI recommendation is shown to adjuster before they make final decision.
+Automation rate: 40% of routine claims auto-approved without adjuster review if confidence > 95%.
+
+
+CONTEXT AND TECHNICAL DETAILS
+------------------------------
+Model Architecture:
+  - Stage 1: Document OCR via AWS Textract + custom post-processing
+  - Stage 2: Information extraction using GPT-4o (Azure OpenAI) via LangChain
+  - Stage 3: Rule-based validation engine v2.1 (proprietary, 847 rules)
+  - Stage 4: Risk scoring via XGBoost classifier (our own model)
+  - Stage 5: Final recommendation via ensemble of Stage 3 + Stage 4 outputs
+
+Training Data:
+  - 2.3 million historical claims from 2019 to 2024
+  - Source: US market only — auto insurance (60%), homeowner insurance (35%), other (5%)
+  - Date range: 5 years, but COVID period (2020-2021) has known anomalies we have not filtered
+  - Label quality: Human adjuster decisions used as ground truth. Known adjuster inconsistency
+    rate of approximately 12% on borderline cases (internal audit finding from 2023)
+
+Evaluation Results (internal testing):
+  - Overall accuracy: 91.2% on held-out test set of 5,000 claims
+  - Precision on APPROVE: 94.1%
+  - Recall on APPROVE: 89.3%
+  - Precision on REJECT: 88.7%
+  - Recall on REJECT: 92.1%
+  - Fraud detection recall: 88% (12% of fraudulent claims not flagged)
+  - False positive rate on REJECT: 6% (legitimate claims incorrectly rejected)
+  - Test set composition: Same distribution as training data — NOT independently sampled
+
+What we have NOT tested:
+  - Health insurance claims
+  - Life insurance claims
+  - Commercial property claims above $500K
+  - Non-English documents (Spanish, Mandarin — 8% of incoming volume)
+  - Claims involving litigation or legal disputes
+  - Catastrophic weather events (CAT claims) with surge volume
+  - Claims from new client verticals we are onboarding in Q4
+
+Deployment Environment:
+  - Multi-tenant SaaS on AWS ECS (Fargate)
+  - Each client gets isolated data store (separate RDS instances)
+  - Latency target: Under 3 seconds per claim for standard processing
+  - Availability SLA: 99.5% uptime
+
+PII and Data Handling:
+  - Claims contain: SSNs, DOBs, bank account details, medical diagnoses, vehicle VINs,
+    property addresses, witness statements, legal correspondence
+  - Field-level encryption at rest using AWS KMS
+  - No HIPAA Business Associate Agreement (BAA) in place yet with any client
+  - GDPR assessment: Not completed. Two clients have EU policyholders.
+
+
+OBJECTIVES
+----------
+Primary KPIs:
+  - Reduce average claim processing time from 8 days to under 24 hours
+  - Reduce cost per claim processed by 35%
+  - Achieve adjuster satisfaction score above 4.2/5.0
+  - Maintain or improve claim settlement accuracy vs baseline
+
+Secondary KPIs:
+  - 95% adjuster adoption rate within 90 days of launch
+  - Zero Tier-1 incidents (customer-facing outages) in first 90 days
+  - Fraud detection rate improvement from current 76% to 88%
+
+
+KNOWN RISKS (AS IDENTIFIED BY TEAM)
+------------------------------------
+1. Model accuracy drops on edge cases — mitigation: route low confidence scores to manual review
+2. Non-English documents — mitigation: flag for human review, planned language model upgrade Q4
+3. Data drift as new claim types are added — mitigation: monthly model retraining planned
+4. Adjuster over-reliance on AI recommendation — mitigation: UI designed to show recommendation
+   only after adjuster reviews claim summary (NOT before)
+
+
+TIMELINE
+--------
+Week 1-2: Soft launch to 2 enterprise clients (approximately 10,000 claims/month combined)
+Week 3-6: Gradual rollout to remaining 10 clients
+Week 7+: Full production volume
+
+Hard deadline: Board presentation on July 15 requires production metrics to present.
+Internal pressure: Sales has pre-sold 3 additional clients contingent on July launch.
+
+
+TEAM
+----
+ML Platform Team:
+  - 3 ML engineers (1 senior, 2 mid-level)
+  - 1 data engineer
+  - 2 backend engineers
+  - 1 product manager
+
+Notable gaps:
+  - No dedicated compliance or legal review has been conducted
+  - No security penetration testing on the AI components specifically
+  - No external audit of the rule engine
+  - QA engineer is shared with another project (50% allocation)
+
+
+TECH STACK
+----------
+AI/ML: GPT-4o via Azure OpenAI, LangChain, XGBoost, scikit-learn
+OCR: AWS Textract
+Infrastructure: AWS ECS Fargate, PostgreSQL RDS, Redis, S3
+API: FastAPI (Python)
+Frontend: React + TypeScript
+Monitoring: Datadog APM, CloudWatch
+CI/CD: GitHub Actions
+
+
+STAKEHOLDERS
+------------
+Direct users: 500 human insurance adjusters across 12 client companies
+Affected parties: End consumers whose claims are processed by the system
+Regulatory: State insurance commissioners (CA, NY, TX — primary; 12 states total)
+Internal: Legal team (not consulted), Compliance team (briefed but not approved),
+          Sales team (driving July deadline), Engineering leadership
+Partner dependencies: AWS, Azure OpenAI (GPT-4o availability), Textract
+
+REGULATORY ENVIRONMENT
+----------------------
+Insurance regulation: State-level in US (50 state regulators)
+AI in insurance: NAIC AI Guidance (adopted), Colorado SB 169 (algorithmic bias),
+                 California AB 2013 (AI transparency requirements)
+Data privacy: State-level CCPA (California clients), Virginia CDPA, Colorado CPA
+HIPAA: Potentially applicable if health insurance claims processed (not currently in scope
+       but clients have requested roadmap for health lines expansion)
+EU GDPR: Two enterprise clients have EU-based policyholders — not assessed
+EU AI Act: System likely qualifies as High-Risk AI (consequential decisions for individuals)
+
+
+HUMAN OVERSIGHT PLAN
+--------------------
+- All REJECT recommendations require human adjuster confirmation before execution
+- APPROVE recommendations with confidence below 95% require human review
+- Auto-approval only for: standard auto claims under $5,000, confidence above 95%, no fraud flags
+- Full audit trail of all AI recommendations and human decisions stored for 7 years
+- Adjuster can override AI recommendation at any time with required reason code
+
+
+ROLLBACK PLAN
+-------------
+- Feature flag per client to disable AI recommendations
+- Shadow mode capability (AI runs but recommendations not shown)
+- Rollback to manual processing within 2 hours if P0 incident declared
+- No automated rollback trigger currently defined
+
+
+SUCCESS METRICS (POST-LAUNCH MONITORING)
+-----------------------------------------
+- Daily accuracy vs adjuster override rate
+- Claims per hour per adjuster (productivity metric)
+- Customer complaint rate related to AI decisions
+- Fraud claims identified vs missed (reviewed monthly)
+- Model confidence distribution (drift detection)
+- Latency p50, p95, p99
+- Error rate by claim type and client
+
+
+ADDITIONAL CONTEXT
+------------------
+This is the first production AI system Ogha Inc has deployed that makes consequential
+recommendations affecting real consumer claims. The team has strong ML engineering capability
+but limited production AI operations experience. The July 15 board deadline is creating
+timeline pressure that has accelerated the launch decision beyond what some team members
+are comfortable with.
