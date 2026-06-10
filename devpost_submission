@@ -1,0 +1,82 @@
+REDBOARD — DEVPOST SUBMISSION
+Google for Startups AI Agents Challenge 2026
+Track: Build (Net-New Agents) | Region: APAC
+======================================================
+
+
+QUESTION 1: Project name
+------------------------
+Redboard — Adversarial AI Review Panel
+
+
+QUESTION 2: Short description (one line)
+-----------------------------------------
+Five adversarial AI agents debate your AI shipping decision in parallel and produce a structured go/no-go memo with minority dissent preserved.
+
+
+QUESTION 3: Full description
+-----------------------------
+Every organisation deploying AI faces the same problem: a team builds a system, argues about it internally, and someone senior makes a call. The strongest voice wins. Redboard replaces that broken process with a structured adversarial review — the same mechanism used by investment committees, clinical trial boards, and supreme courts for decisions that matter.
+
+When a team submits a decision brief to Redboard, five specialist agents attack it in parallel:
+
+• Safety Agent — identifies failure modes, harm vectors, edge cases, and adversarial vulnerabilities
+• Business Agent — challenges ROI assumptions, adoption risk, opportunity cost, and hidden costs
+• Data Quality Agent — interrogates evaluation validity, distribution shift, label quality, and bias
+• Compliance Agent — flags GDPR, HIPAA, EU AI Act, and sector-specific regulatory exposure
+• Contrarian Agent — surfaces hidden assumptions, normalised blindspots, and the question nobody is asking
+
+Each agent has access to Google Search grounding so its analysis is based on current regulations and recent incidents — not just training data. A sixth Synthesizer agent aggregates all five reports and produces a final verdict: SHIP, DO NOT SHIP, or SHIP WITH CONDITIONS.
+
+Critically, Redboard never averages away minority dissent. If the Compliance agent says CRITICAL and others say LOW, that CRITICAL position leads the memo. Conditions are specific and testable, not generic. The final memo is delivered as a branded PDF and emailed within minutes.
+
+The system is built entirely with Google ADK for multi-agent orchestration, Gemini 2.5 Flash as the LLM backbone, Google Search for grounding, and exposes a full A2A (Agent-to-Agent) protocol manifest at /.well-known/agent.json for enterprise integration.
+
+
+QUESTION 4: What Google AI technologies did you use?
+------------------------------------------------------
+1. Google ADK (Agent Development Kit) v2.2 — Multi-agent orchestration. All six agents (Safety, Business, Data, Compliance, Contrarian, Synthesizer) are LlmAgent instances running via Google ADK runners with InMemorySessionService. The five specialist agents run in true parallel via asyncio.gather.
+
+2. Gemini 2.5 Flash — LLM backbone for all six agents. Selected for its strong reasoning, long context window (handles large documents + all agent prompts), and low latency for parallel execution.
+
+3. Google Search (via google.adk.tools.google_search) — All five specialist agents have live search access. The Compliance agent searches for current regulatory requirements (EU AI Act implementing acts, HIPAA BAA rules). The Safety agent searches for recent incidents involving similar AI systems. This grounds the analysis in facts, not just training data.
+
+4. Google Cloud Run — Deployment target. Containerised FastAPI backend deployed on Cloud Run for scalability and managed infrastructure.
+
+5. Google Cloud Build — CI/CD for container builds.
+
+6. Vertex AI API — Enabled on the GCP project (apt-diode-498606-j6) for enterprise-grade model access.
+
+7. A2A (Agent-to-Agent) Protocol — The orchestrator exposes a standard A2A manifest at /.well-known/agent.json with Agent Cards for all six agents, enabling enterprise orchestration platforms to discover and invoke the Redboard panel programmatically.
+
+
+QUESTION 5: How it works (technical)
+--------------------------------------
+1. User submits a decision brief via the web UI (4-step form or full document upload). Brief includes: proposal, context, team, timeline, objectives, known risks, regulatory environment, tech stack, stakeholders, and optional file attachments (eval reports, model cards, architecture docs).
+
+2. FastAPI backend validates input, saves uploaded files, and calls run_panel() in orchestrator.py.
+
+3. The orchestrator enriches the brief by reading all uploaded file contents inline (TXT, CSV, MD, JSON, YAML — up to 12,000 chars each), then dispatches five LlmAgent instances in parallel via asyncio.gather with a shared Google ADK session service.
+
+4. Each agent receives the full enriched brief and runs independently against Gemini 2.5 Flash with Google Search grounding enabled. Agents cite specific content from uploaded documents using [Doc: filename] notation.
+
+5. The Synthesizer agent receives all five outputs and produces a structured decision memo following a strict format: verdict, confidence, overall risk score (X/10), risk summary table, key findings, conditions to ship, minority dissent (verbatim quote), and recommended next steps.
+
+6. The backend generates three outputs via ReportLab: a branded Decision Memo PDF, a Submission Brief PDF (all form fields), and a Sources ZIP (brief + uploaded files). All three are stored and emailed via the Resend API.
+
+7. The A2A manifest at /.well-known/agent.json exposes all six agents as standard Agent Cards for enterprise integration.
+
+
+QUESTION 6: Challenges and what you learned
+---------------------------------------------
+The hardest challenge was making the agents genuinely specific rather than generic. Early versions produced analysis that could apply to any AI project. We solved this by:
+— Enriching every brief with full file contents inline, so agents read actual eval reports and architecture docs rather than summaries
+— Instructing every agent to cite specific content with [Doc: filename] notation
+— Adding Google Search grounding so agents verify current regulatory requirements rather than relying on training data
+— Building the synthesizer to weight CRITICAL > HIGH > MEDIUM > LOW and explicitly preserve minority dissent
+
+The second challenge was reliable PDF generation from agent output. Gemini uses markdown formatting (**bold**, *italic*) and filenames containing underscores that broke ReportLab's XML parser when naively converted to tags. We solved this by stripping all markdown before passing text to ReportLab — a subtlety that took significant debugging.
+
+The third challenge was the parallel agent architecture. Five agents running simultaneously against the same session service occasionally conflicted on session IDs. We solved this by generating unique session IDs per agent per run using uuid4().
+
+We learned that adversarial AI review is genuinely useful — running our own ClaimsIQ insurance AI sample through Redboard produced a 15-page memo that identified the HIPAA BAA gap, the contaminated test set, the prompt injection vulnerability, and four unresolved rule engine conflicts that we had intentionally planted. The agents found all of them.

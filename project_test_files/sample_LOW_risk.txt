@@ -1,0 +1,66 @@
+REDBOARD SAMPLE BRIEF — LOW RISK
+Expected verdict: SHIP
+Scenario: AI-powered sprint planning assistant for internal dev teams
+
+PROPOSAL
+Deploy an AI assistant that analyzes a team's GitHub activity, Jira backlog, and historical
+velocity data to suggest sprint capacity estimates and flag tickets that appear under-scoped
+or missing acceptance criteria. Output is a weekly digest email to team leads and an optional
+Slack nudge when a PR has been open for more than 5 days. Fully advisory — no automated
+actions taken. Engineers can ignore all suggestions.
+
+CONTEXT AND TECHNICAL DETAILS
+Architecture: Python script running on a cron schedule (weekly). Uses GPT-4o to summarize
+backlog patterns and generate natural language suggestions. Reads from GitHub API and Jira API
+with read-only tokens. No data stored externally — everything processed in-memory and discarded.
+Evaluation: 6-week internal pilot with 3 engineering teams (28 engineers). 82% of team leads
+rated suggestions as "useful" or "somewhat useful" in exit survey. No adverse outcomes reported.
+Data: GitHub commit history, PR descriptions, Jira ticket titles and descriptions.
+No PII. No customer data. No financial data.
+Access: Read-only to existing internal systems. No write access. No external API calls except
+to Azure OpenAI (enterprise agreement with data processing addendum signed).
+Failure mode: If the script fails, it sends no email. No degraded behavior. Silent fail with
+alert to on-call engineer.
+
+TEAM
+1 senior engineer built this as a 20% project over 6 weeks. Reviewed by 2 peers.
+Tech lead reviewed and approved the architecture.
+
+TIMELINE
+Full rollout to 15 engineering teams (approximately 120 engineers) next Monday.
+
+OBJECTIVES
+Save team leads 30 minutes per sprint planning session.
+Reduce tickets missing acceptance criteria by 40% within 90 days.
+No business-critical dependency — this is a quality-of-life improvement.
+
+KNOWN RISKS
+Suggestions may not account for team-specific context only the lead knows.
+Addressed: suggestions are framed as questions, not directives. Team lead always decides.
+GPT-4o token costs at scale: estimated 12 dollars/month. Approved by engineering manager.
+
+TECH STACK
+Python 3.12, GPT-4o via Azure OpenAI (enterprise agreement), GitHub API, Jira API,
+SendGrid for email delivery, deployed as AWS Lambda on weekly cron.
+
+STAKEHOLDERS
+15 engineering team leads. Engineering VP (briefed and approved). No external users. No customers.
+
+REGULATORY ENVIRONMENT
+No regulatory requirements apply. Internal tooling only. Enterprise Azure OpenAI DPA covers data handling.
+
+DATA SENSITIVITY
+Internal — no PII, no customer data, no financial information. Ticket and PR text only.
+
+HUMAN OVERSIGHT
+100% human decision-making. All AI output is a suggestion. Engineers and team leads choose
+whether to act on any recommendation. No automated actions possible.
+
+ROLLBACK PLAN
+Disable Lambda cron trigger. Done in 2 minutes. No user impact beyond stopping the weekly email.
+
+SUCCESS METRICS
+Team lead satisfaction survey at 30 and 90 days.
+Ticket completion rate before sprint vs after sprint (existing Jira metric).
+Token cost vs budget (monthly check).
+Number of sprint retrospective complaints about scoping (qualitative).

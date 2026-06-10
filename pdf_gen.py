@@ -266,7 +266,7 @@ def build_cover(review_id, proposal, submitter, company,
     logo_table = Table([[
         Paragraph('<b>Red</b>', logo_red_style),
         Paragraph('<b>board</b>', logo_dark_style),
-    ]], colWidths=[24*mm, 54*mm], hAlign='LEFT')
+    ]], colWidths=[19*mm, 54*mm], hAlign='LEFT')
     logo_table.setStyle(TableStyle([
         ('TOPPADDING',(0,0),(-1,-1),0), ('BOTTOMPADDING',(0,0),(-1,-1),0),
         ('LEFTPADDING',(0,0),(-1,-1),0), ('RIGHTPADDING',(0,0),(-1,-1),0),

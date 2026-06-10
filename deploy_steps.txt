@@ -1,0 +1,150 @@
+REDBOARD — DEPLOYMENT STEPS
+============================
+Do these in order. Each step takes the time shown.
+
+──────────────────────────────────────────────────────
+STEP 1: UPDATE SECRET_KEY IN .ENV (2 min)
+──────────────────────────────────────────────────────
+Your current .env has no SECRET_KEY. Generate one:
+
+    python -c "import secrets; print(secrets.token_hex(32))"
+
+Copy the output and add to .env:
+
+    SECRET_KEY=the_output_from_above
+
+──────────────────────────────────────────────────────
+STEP 2: REPLACE THESE FILES IN YOUR REDBOARD FOLDER (5 min)
+──────────────────────────────────────────────────────
+Copy from this folder into C:\Users\pujaa\redboard\:
+
+    main.py              ← production version (rate limiting, CORS fix)
+    requirements.txt     ← adds slowapi, resend, pins bcrypt
+    Dockerfile           ← for Cloud Run
+    .dockerignore        ← keeps image clean
+    .env.example         ← updated reference
+
+DO NOT copy .env or redboard.db — those stay as they are.
+
+──────────────────────────────────────────────────────
+STEP 3: GIT PUSH (5 min)
+──────────────────────────────────────────────────────
+
+    cd C:\Users\pujaa\redboard
+    git add .
+    git commit -m "Production deployment - rate limiting, CORS, Dockerfile"
+    git push origin main
+
+──────────────────────────────────────────────────────
+STEP 4: BUY DOMAIN (10 min)
+──────────────────────────────────────────────────────
+1. Go to namecheap.com
+2. Search redboard.dev — ~$12.98
+3. Buy it, complete checkout
+4. Leave DNS settings alone for now
+
+──────────────────────────────────────────────────────
+STEP 5: DEPLOY TO CLOUD RUN (30-45 min)
+──────────────────────────────────────────────────────
+Copy deploy.sh into C:\Users\pujaa\redboard\ then run:
+
+    # On Windows use Git Bash or WSL, not Command Prompt
+    cd C:\Users\pujaa\redboard
+    bash deploy.sh
+
+If you prefer to run commands manually:
+
+    gcloud config set project apt-diode-498606-j6
+
+    gcloud services enable cloudbuild.googleapis.com run.googleapis.com containerregistry.googleapis.com
+
+    gcloud builds submit --tag gcr.io/apt-diode-498606-j6/redboard
+
+    gcloud run deploy redboard \
+      --image gcr.io/apt-diode-498606-j6/redboard \
+      --platform managed \
+      --region us-central1 \
+      --allow-unauthenticated \
+      --memory 2Gi \
+      --cpu 1 \
+      --timeout 300 \
+      --concurrency 10 \
+      --set-env-vars "GEMINI_API_KEY=AQ.Ab...,SECRET_KEY=YOUR_SECRET_KEY_HERE,RESEND_API_KEY=re_..,FROM_EMAIL=onboarding@resend.dev,FROM_NAME=Redboard,GOOGLE_CLOUD_PROJECT=apt-diode-498606-j6,GOOGLE_CLOUD_LOCATION=us-central1,GOOGLE_GENAI_USE_VERTEXAI=false,ALLOWED_ORIGINS=https://redboard.dev"
+
+Cloud Run will output a URL like:
+    https://redboard-xxxx-uc.a.run.app
+
+Test it in your browser — you should see the landing page.
+
+──────────────────────────────────────────────────────
+STEP 6: CONNECT DOMAIN (15 min + up to 30 min DNS)
+──────────────────────────────────────────────────────
+1. Go to console.cloud.google.com
+2. Navigate to Cloud Run → redboard → Custom domains
+3. Click "Add mapping"
+4. Enter: redboard.dev
+5. Google shows you DNS records — copy them
+
+6. Go to namecheap.com → Domain List → redboard.dev → Manage → Advanced DNS
+7. Delete any existing A records
+8. Add the records Google gave you (usually 4 A records + 1 CNAME)
+9. Save
+
+DNS propagates in 10-30 minutes. Test with:
+    curl -I https://redboard.dev
+
+──────────────────────────────────────────────────────
+STEP 7: UPDATE CORS ORIGIN (2 min)
+──────────────────────────────────────────────────────
+Once domain is live, update the Cloud Run env var:
+
+    gcloud run services update redboard \
+      --region us-central1 \
+      --update-env-vars "ALLOWED_ORIGINS=https://redboard.dev,https://www.redboard.dev"
+
+──────────────────────────────────────────────────────
+STEP 8: VERIFY EVERYTHING WORKS
+──────────────────────────────────────────────────────
+[ ] Landing page loads at https://redboard.dev
+[ ] Can register a new account
+[ ] Verification email arrives in inbox
+[ ] Can sign in after verification
+[ ] Can submit a review using sample_LOW_risk.txt
+[ ] Results screen shows verdict and agent reports
+[ ] PDF downloads correctly
+[ ] Email arrives with 3 attachments
+[ ] Admin panel accessible at admin@redboard.ai
+
+──────────────────────────────────────────────────────
+STEP 9: DEVPOST SUBMISSION
+──────────────────────────────────────────────────────
+Go to devpost.team/google and fill in:
+
+    Project name:    Redboard
+    Tagline:         See DEVPOST_SUBMISSION.txt Q2
+    Description:     See DEVPOST_SUBMISSION.txt Q3
+    Technologies:    See DEVPOST_SUBMISSION.txt Q4
+    GitHub:          https://github.com/pujaankithauta-svg/redboard
+    Live demo URL:   https://redboard.dev
+    Video:           Upload after recording tomorrow
+
+Copy answers from DEVPOST_SUBMISSION.txt
+
+──────────────────────────────────────────────────────
+TROUBLESHOOTING
+──────────────────────────────────────────────────────
+Review endpoint times out (Cloud Run default is 60s, reviews take 60-90s):
+→ Already handled — deploy.sh uses --timeout 300
+
+Container crashes on start:
+→ Check logs: gcloud run logs tail redboard --region us-central1
+→ Most common cause: missing env var. Verify GEMINI_API_KEY and SECRET_KEY are set.
+
+PDF download 404:
+→ Expected on Cloud Run — the /app/outputs folder is ephemeral.
+→ For the demo, generate a fresh review each time. Files persist for the life of the instance (~1 hour of inactivity before Cloud Run recycles it).
+→ Post-hackathon fix: mount Cloud Storage bucket.
+
+Build fails:
+→ Run: gcloud builds submit --tag gcr.io/apt-diode-498606-j6/redboard --verbosity=info
+→ Usually a missing file or pip install failure. Check the build log.

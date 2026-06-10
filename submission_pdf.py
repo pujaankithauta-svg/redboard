@@ -129,7 +129,7 @@ def generate_submission_pdf(output_path, project_name, review_id, submitter, com
     left = [
         Paragraph('<font color="#C0392B" size="24"><b>Red</b></font><font color="#1A2744" size="24"><b>board</b></font>',
                   S('logo')),
-        Paragraph('Submission Brief', S('sub', fontSize=9, textColor=LGRAY, spaceAfter=0)),
+        Paragraph('Submission Brief', S('sub', fontSize=9, textColor=LGRAY, spaceBefore=6, spaceAfter=0)),
     ]
     right = [
         Paragraph(

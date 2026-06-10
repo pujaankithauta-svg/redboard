@@ -1,61 +1,261 @@
-REDBOARD — SAMPLE INPUT FILES
-==============================
+REDBOARD — HOW TO USE & WHAT TO EXPECT
+========================================
+Last updated: June 2026
 
-These three files simulate a real company submitting a decision brief for adversarial review.
-The scenario: Ogha Inc is about to launch an AI claims processing system for 12 insurance companies.
 
-HOW TO USE
-----------
+WHAT IS REDBOARD?
+-----------------
+Redboard is an adversarial AI review panel. When your team is about to ship an AI feature,
+you submit a decision brief. Five specialist agents debate it in parallel — Safety, Business,
+Data Quality, Compliance, and Contrarian — and a Synthesizer produces a structured verdict:
+SHIP, DO NOT SHIP, or SHIP WITH CONDITIONS.
 
-Step 1 — Open Redboard at http://localhost:8000 and sign in.
+The agents have access to Google Search so they cite current regulations and recent incidents,
+not just training data. Every review produces a branded PDF memo emailed to you within minutes.
 
-Step 2 — Click "New Review" in the sidebar.
 
-Step 3 — STEP 1 (The Proposal):
-  Open sample_brief.txt and copy-paste each section into the corresponding form field:
-  - PROPOSAL section → Proposal field
-  - CONTEXT AND TECHNICAL DETAILS section → Context field
-  - OBJECTIVES section → Objectives field
+WHO SHOULD USE IT
+-----------------
+- ML engineers about to deploy a model to production
+- Product managers making a build vs buy decision involving AI
+- Engineering leads doing a pre-mortem on an AI feature
+- Compliance teams wanting a structured AI risk assessment
+- Anyone who wants a second opinion before a consequential AI decision
 
-Step 4 — STEP 2 (Company Context):
-  From sample_brief.txt:
-  - TEAM section → Team field
-  - TIMELINE section → Timeline field
-  - "50,000 monthly active users across 12 enterprise clients" → User Base
-  - "Insurance — auto, homeowner" → Domain
-  - "US market" → Geographies
-  - "Enterprise insurance companies (B2B)" → User Type
-  - TECH STACK section → Tech Stack field
-  - STAKEHOLDERS section → Stakeholders field
 
-Step 5 — STEP 3 (Risk & Team):
-  From sample_brief.txt:
-  - KNOWN RISKS section → Known Risks field
-  - REGULATORY ENVIRONMENT section → Regulatory field
-  - "Highly Sensitive — financial/medical/legal data" → Data Sensitivity
-  - HUMAN OVERSIGHT PLAN section → Human Oversight field
-  - ROLLBACK PLAN section → Rollback Plan field
-  - SUCCESS METRICS section → Success Metrics field
+THE FOUR-STEP FORM
+------------------
+Redboard collects information across four steps. The more detail you provide, the more
+specific and useful the analysis will be. Generic inputs produce generic outputs.
 
-Step 6 — STEP 4 (Documents):
-  Upload BOTH of these files:
-  - eval_report.csv (the model evaluation results)
-  - architecture_risks.txt (the engineering concerns document)
-  
-  These files contain critical information the agents WILL find and cite.
+STEP 1 — The Proposal (required)
+  Project Name: A short name used as the PDF filename and email subject.
+                e.g. "ClaimsIQ v1.0" or "CustomerBot Launch"
 
-Step 7 — Click "LAUNCH ADVERSARIAL PANEL"
+  Proposal:     What are you shipping? Be specific.
+                Include: the system name, what it does, who it affects, deployment scope.
+                Bad:  "An AI chatbot for customer support"
+                Good: "Deploy a RAG-based chatbot to handle tier-1 billing queries for
+                       50,000 enterprise users across 12 insurance clients, with auto-
+                       escalation to human agents for queries the model scores below 0.7"
 
-WHAT TO EXPECT
---------------
-The panel will take 30-90 seconds. It will produce a detailed memo that should:
-- Catch the GPT-4o prompt injection risk (from architecture_risks.txt)
-- Flag the Azure OpenAI HIPAA/GDPR data processing issue
-- Challenge the 91.2% accuracy claim given the biased test set
-- Flag the auto-approval path with no secondary review
-- Question the July 15 deadline pressure
-- Identify the EU AI Act High-Risk classification concern
-- Cite specific numbers from the eval report (4.8% false approval rate, 144 incorrect approvals/day)
-- Reference the four unresolved rule engine conflicts (RUL-441, RUL-502, RUL-518, RUL-601)
+  Context:      Everything technical. The agents read this most carefully.
+                Include: model architecture, training data (size, source, date range),
+                evaluation metrics (accuracy, precision, recall, F1), test set composition,
+                deployment environment, latency requirements, known limitations,
+                any prior A/B testing or shadow mode results.
 
-A PDF memo will be emailed to you and available to download.
+  Objectives:   What does success look like in specific numbers?
+                e.g. "Reduce claim processing time from 8 days to 24 hours.
+                Cut cost per claim by 35%. Process 10,000 claims/day at launch."
+
+STEP 2 — Company Context (optional but recommended)
+  Team:         Who built this and what is their background?
+                e.g. "3 ML engineers, 1 data engineer, 2 backend engineers, 1 PM.
+                No dedicated compliance or legal review done yet."
+
+  Timeline:     When does it need to launch and why?
+                Any deadline pressure is important — agents will probe this.
+                e.g. "Soft launch in 3 weeks. Board presentation July 15 hard deadline.
+                Sales has pre-sold 3 clients contingent on July launch."
+
+  User Base:    How many users, what type, what are the stakes?
+                e.g. "50,000 MAU across 12 enterprise clients. B2B."
+
+  Domain:       Industry vertical.
+                e.g. "Insurance — auto and homeowner claims"
+
+  Geographies:  Where will it operate? This affects regulatory analysis significantly.
+                e.g. "US only at launch. Two clients have EU policyholders."
+
+  User Type:    B2B enterprise, B2C consumers, internal employees, etc.
+
+  Tech Stack:   All major components.
+                e.g. "GPT-4o via Azure OpenAI, LangChain, XGBoost, AWS ECS, PostgreSQL"
+
+  Stakeholders: Everyone affected — end users, regulators, internal teams, partners.
+
+STEP 3 — Risk & Governance (optional but recommended)
+  Known Risks:      Risks the team has already identified and how they plan to mitigate them.
+                    Do not hide risks — agents probe harder when risks are understated.
+
+  Regulatory:       Applicable regulations.
+                    e.g. "HIPAA, Colorado SB 169, California AB 2013, EU AI Act High-Risk"
+
+  Data Sensitivity: Select from the dropdown — agents weight compliance analysis accordingly.
+
+  Human Oversight:  What is the human in the loop?
+                    e.g. "All REJECT decisions require human adjuster confirmation.
+                    Auto-approve only for claims under $5,000 with confidence above 95%."
+
+  Rollback Plan:    How quickly can you disable this if something goes wrong?
+                    e.g. "Feature flag per client. Shadow mode available. 2-hour rollback."
+
+  Success Metrics:  What will you monitor post-launch?
+                    e.g. "Daily accuracy vs override rate, fraud detection rate, latency p99"
+
+STEP 4 — Documents (optional but strongly recommended)
+  Upload any supporting documents. Agents read every file and cite specific content.
+  The more you provide, the more specific the analysis.
+
+  Most useful file types:
+  - Eval reports (CSV, TXT) — agents will analyse your metrics and find gaps
+  - Architecture docs (TXT, MD) — agents will find risks the team normalised
+  - Model cards — agents will challenge evaluation methodology
+  - Code snippets (PY, JS) — agents will identify security and logic issues
+  - Slide decks as text — agents will challenge business assumptions
+
+  File limits: PDF, TXT, MD, PY, JS, JSON, CSV, YAML — max 10MB each
+
+
+SKIP THE FORM — UPLOAD A COMPLETE BRIEF
+----------------------------------------
+If you have a single document that describes your project, use the "Skip the form" option
+at the top of the New Review page. Upload one file (PDF, TXT, or MD) and click submit.
+The agents will extract all context from the document automatically.
+
+For best results, your document should include:
+  - What the system does and who it affects
+  - Model architecture and training data details
+  - Evaluation metrics and how they were measured
+  - Team size and background
+  - Timeline and any deadline pressure
+  - Known risks and mitigation plans
+  - Tech stack
+  - Stakeholders and regulatory environment
+  - Deployment plan and rollback strategy
+
+See sample_brief.txt for an example of a complete brief.
+
+
+THE THREE SAMPLE INPUTS
+-----------------------
+A realistic scenario designed to
+produce a different verdict.
+
+1. sample_HIGH_risk.txt
+   Scenario:  AI hiring system that auto-rejects 60% of job applicants with no human review,
+              trained on 8 years of historically biased hiring decisions, no bias audit,
+              no legal review, launching in 2 weeks to process 480,000 applicants per year.
+   Upload:    Just this file via the skip-the-form zone
+   Expect:    DO NOT SHIP, HIGH confidence
+   Why:       Active EEOC and EU AI Act violations, no disparate impact analysis,
+              auto-rejection of humans with no appeal, biased training data, no legal review
+
+3. brief_2.txt
+   Scenario:  Sprint planning assistant for 15 internal engineering teams. Fully advisory,
+              read-only, no PII, no customer data, enterprise Azure OpenAI DPA signed,
+              6-week pilot completed, 2-minute rollback, silent fail mode.
+   Upload:    Just this file via the skip-the-form zone
+   Expect:    SHIP or SHIP WITH CONDITIONS
+   Why:       Low blast radius, reversible, advisory only. Agents will note concerns
+              about pilot size and compliance monitoring but should not block launch.
+
+For the richest HIGH-risk analysis, use the full form:
+  - Proposal + Context from sample_brief.txt
+  - Upload eval_report.csv AND architecture_risks.txt as supporting documents
+  The agents will cite specific numbers from the eval report and find the 8 known
+  engineering issues buried in architecture_risks.txt.
+
+
+WHAT TO EXPECT FROM THE PANEL
+------------------------------
+TIMING
+  The panel takes 30 to 90 seconds depending on brief length and document volume.
+  All five agents run in parallel — it does not take 5x longer for 5 agents.
+  Do not close the browser tab while it runs.
+
+THE RESULTS SCREEN
+  Verdict banner:     SHIP (green) / DO NOT SHIP (red) / SHIP WITH CONDITIONS (orange)
+  Confidence level:   HIGH / MEDIUM / LOW — how certain the panel is
+  Risk score:         X/10 — overall risk level (10 = extreme, 1 = trivial)
+  Risk summary table: One-line assessment from each of the five agents with their risk level
+  Key findings:       The 4-5 most important cross-cutting insights from all agents
+  Conditions:         Specific, testable requirements if verdict is SHIP WITH CONDITIONS
+  Minority dissent:   Verbatim quote from the harshest agent if they disagree with the verdict
+  Next steps:         Numbered, actionable recommendations with suggested owners
+  Agent reports:      Full individual analysis from each agent — click tabs to switch
+
+WHAT GOOD OUTPUT LOOKS LIKE
+  - Findings reference specific details from YOUR brief, not generic AI advice
+  - Document findings cite [Doc: filename] with specific content
+  - Conditions are specific ("obtain HIPAA BAA with all clients before processing claims")
+    not generic ("improve compliance processes")
+  - The contrarian agent asks a question that reframes the entire decision
+  - The synthesizer weighs severity relative to the nature of the system —
+    an internal advisory tool is not held to the same standard as a consumer
+    automated decision system
+
+WHAT THE AGENTS WILL FIND (that teams often miss)
+  - Biased test sets (training and test data from the same pool)
+  - Auto-approval or auto-rejection paths with no human fallback
+  - Regulatory gaps the team assumed did not apply
+  - Timeline pressure driving premature launch decisions
+  - Single points of failure in the operational model
+  - Specific numbers in eval reports that undermine the headline accuracy claim
+  - Engineering concerns buried in architecture documents that the team normalised
+  - The question nobody on the team is asking out loud
+
+EMAIL DELIVERY
+  When the review completes, three files are emailed to your registered address:
+  1. Decision Memo_datetime.pdf  — the full adversarial analysis (all agent reports)
+  2. Submission Brief_datetime.pdf — all your form fields formatted as a document
+  3. Submission Details_datetime.zip — brief PDF + all uploaded source files
+
+  Check your spam folder if the email does not arrive within 2 minutes.
+  Gmail users: check the Promotions tab.
+
+PDF DOWNLOAD
+  The PDF is also available directly from the results screen and from Review History.
+  Filename format: ProjectName_YYYYMMDD_HHMM.pdf
+
+
+TIPS FOR BETTER ANALYSIS
+-------------------------
+1. More context = better analysis
+   The agents cannot find risks in information you did not provide.
+   A three-line proposal gets a generic review. A detailed brief gets a specific one.
+
+2. Upload documents whenever you have them
+   An eval report CSV is worth more than describing the metrics in text.
+   The agents read file contents directly and cite specific lines.
+
+3. Do not sanitise your risks section
+   Teams that hide known risks get more aggressive analysis, not less.
+   Agents probe harder when the risk section is suspiciously clean.
+   Disclosing a risk upfront with a mitigation plan is the right move.
+
+4. Include deadline pressure if it exists
+   "Board presentation July 15 requires production metrics" is exactly the kind
+   of context that changes an analysis. The contrarian agent in particular
+   will surface whether a timeline is technically driven or commercially driven.
+
+5. Use the project name field carefully
+   It becomes the PDF filename and email subject. Use something specific:
+   "ClaimsIQ v1.0" not "AI Project" or "Test"
+
+6. Review history stores everything
+   Every review you run is saved and downloadable from the Review History page.
+   You can re-download the PDF at any time.
+
+
+ADMIN PANEL
+-----------
+Accessible to admin accounts only (admin@redboard.ai by default).
+Shows: total users, reviews, verdict breakdown, user management (suspend/activate),
+full audit log of every action taken in the system.
+
+Default admin credentials (change immediately):
+  Email:    admin@redboard.ai
+  Password: Admin@Redboard2026!
+
+
+SUPPORT
+-------
+If a review fails or produces an error, check:
+- The proposal and context fields are not empty
+- Uploaded files are under 10MB each
+- File types are supported (PDF, TXT, MD, PY, JS, JSON, CSV, YAML)
+- Your session has not expired (sign out and back in)
+
+For deployment issues, check the uvicorn terminal for error output.
